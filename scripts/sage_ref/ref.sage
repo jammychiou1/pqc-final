@@ -7,8 +7,6 @@ Zq = Zmod(Q)
 R.<x> = PolynomialRing(Zq)
 
 m = x ** P - x - 1
-m1 = x ** P
-m2 = x ** (P - 1) - 1
 
 Zq = Zmod(Q)
 R.<x> = PolynomialRing(Zq)
@@ -25,11 +23,12 @@ for i in range(P):
 
 c = a * b % m
 
+def center_lift(val):
+  val = int(val)
+  return val if val <= (Q - 1) / 2 else val - Q
+
 def print_poly(p):
-    coefs = [p[i] for i in range(P)]
+    coefs = [center_lift(p[i]) for i in range(P)]
     print(' '.join(map(str, coefs)))
 
-
-# print_poly(a * b % m1)
-# print_poly(a * b % m2)
 print_poly(a * b % m)

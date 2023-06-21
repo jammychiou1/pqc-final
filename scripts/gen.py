@@ -4,8 +4,8 @@ import random
 Q = 4591
 P = 761
 
-a = [random.randrange(Q) for i in range(P)]
-b = [random.randrange(Q) for i in range(P)]
+a = [random.randint(-(Q - 1) // 2, (Q - 1) // 2) for i in range(P)]
+b = [random.randint(-(Q - 1) // 2, (Q - 1) // 2) for i in range(P)]
 
 print(' '.join(map(str, a)))
 print(' '.join(map(str, b)))
