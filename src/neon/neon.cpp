@@ -169,21 +169,38 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
       int32x4_t wide_front_low[5][2];
       int32x4_t wide_front_high[5][2];
 
-      for (int i2 = 0; i2 < 2; i2++) {
-        for (int ii1 = 0; ii1 < 5; ii1++) {
-          int16x8_t front = vld1q_s16(&ntt[(ii1 * 4 + i2 * 5) % 10][j][0]);
-          if (ii1 == 0) {
-            for (int i1 = 0; i1 < 5; i1++) {
-              wide_front_low[i1][i2] = vmovl_s16(vget_low_s16(front));
-              wide_front_high[i1][i2] = vmovl_high_s16(front);
-            }
+      // i2 = 0
+      for (int ii1 = 0; ii1 < 5; ii1++) {
+        int16x8_t front = vld1q_s16(&ntt[ii1 * 4 % 10][j][0]);
+        if (ii1 == 0) {
+          for (int i1 = 0; i1 < 5; i1++) {
+            wide_front_low[i1][0] = vmovl_s16(vget_low_s16(front));
+            wide_front_high[i1][0] = vmovl_high_s16(front);
           }
-          else {
-            for (int i1 = 0; i1 < 5; i1++) {
-              int16_t twiddle = w_5s[i1 * ii1];
-              wide_front_low[i1][i2] = vmlal_n_s16(wide_front_low[i1][i2], vget_low_s16(front), twiddle);
-              wide_front_high[i1][i2] = vmlal_high_n_s16(wide_front_high[i1][i2], front, twiddle);
-            }
+        }
+        else {
+          for (int i1 = 0; i1 < 5; i1++) {
+            int16_t twiddle = w_5s[i1 * ii1];
+            wide_front_low[i1][0] = vmlal_n_s16(wide_front_low[i1][0], vget_low_s16(front), twiddle);
+            wide_front_high[i1][0] = vmlal_high_n_s16(wide_front_high[i1][0], front, twiddle);
+          }
+        }
+      }
+
+      // i2 = 1
+      for (int ii1 = 0; ii1 < 5; ii1++) {
+        int16x8_t front = vld1q_s16(&ntt[(ii1 * 4 + 5) % 10][j][0]);
+        if (ii1 == 0) {
+          for (int i1 = 0; i1 < 5; i1++) {
+            wide_front_low[i1][1] = vmovl_s16(vget_low_s16(front));
+            wide_front_high[i1][1] = vmovl_high_s16(front);
+          }
+        }
+        else {
+          for (int i1 = 0; i1 < 5; i1++) {
+            int16_t twiddle = w_5s[i1 * ii1];
+            wide_front_low[i1][1] = vmlal_n_s16(wide_front_low[i1][1], vget_low_s16(front), twiddle);
+            wide_front_high[i1][1] = vmlal_high_n_s16(wide_front_high[i1][1], front, twiddle);
           }
         }
       }
@@ -211,21 +228,38 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
       int32x4_t wide_back_low[5][2];
       int32x4_t wide_back_high[5][2];
 
-      for (int i2 = 0; i2 < 2; i2++) {
-        for (int ii1 = 0; ii1 < 5; ii1++) {
-          int16x8_t back = vld1q_s16(&ntt[(ii1 * 4 + i2 * 5) % 10][j][8]);
-          if (ii1 == 0) {
-            for (int i1 = 0; i1 < 5; i1++) {
-              wide_back_low[i1][i2] = vmovl_s16(vget_low_s16(back));
-              wide_back_high[i1][i2] = vmovl_high_s16(back);
-            }
+      // i2 = 0
+      for (int ii1 = 0; ii1 < 5; ii1++) {
+        int16x8_t back = vld1q_s16(&ntt[ii1 * 4 % 10][j][8]);
+        if (ii1 == 0) {
+          for (int i1 = 0; i1 < 5; i1++) {
+            wide_back_low[i1][0] = vmovl_s16(vget_low_s16(back));
+            wide_back_high[i1][0] = vmovl_high_s16(back);
           }
-          else {
-            for (int i1 = 0; i1 < 5; i1++) {
-              int16_t twiddle = w_5s[i1 * ii1];
-              wide_back_low[i1][i2] = vmlal_n_s16(wide_back_low[i1][i2], vget_low_s16(back), twiddle);
-              wide_back_high[i1][i2] = vmlal_high_n_s16(wide_back_high[i1][i2], back, twiddle);
-            }
+        }
+        else {
+          for (int i1 = 0; i1 < 5; i1++) {
+            int16_t twiddle = w_5s[i1 * ii1];
+            wide_back_low[i1][0] = vmlal_n_s16(wide_back_low[i1][0], vget_low_s16(back), twiddle);
+            wide_back_high[i1][0] = vmlal_high_n_s16(wide_back_high[i1][0], back, twiddle);
+          }
+        }
+      }
+
+      // i2 = 1
+      for (int ii1 = 0; ii1 < 5; ii1++) {
+        int16x8_t back = vld1q_s16(&ntt[(ii1 * 4 + 5) % 10][j][8]);
+        if (ii1 == 0) {
+          for (int i1 = 0; i1 < 5; i1++) {
+            wide_back_low[i1][1] = vmovl_s16(vget_low_s16(back));
+            wide_back_high[i1][1] = vmovl_high_s16(back);
+          }
+        }
+        else {
+          for (int i1 = 0; i1 < 5; i1++) {
+            int16_t twiddle = w_5s[i1 * ii1];
+            wide_back_low[i1][1] = vmlal_n_s16(wide_back_low[i1][1], vget_low_s16(back), twiddle);
+            wide_back_high[i1][1] = vmlal_high_n_s16(wide_back_high[i1][1], back, twiddle);
           }
         }
       }
