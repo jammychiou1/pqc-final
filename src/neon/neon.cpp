@@ -1,4 +1,4 @@
-// #include <arm_neon.h>
+#include <arm_neon.h>
 #include <iostream>
 #include <cstring>
 #include <cassert>
@@ -8,74 +8,156 @@
 #include "pretty.h"
 
 template <size_t SZ>
-constexpr std::array<int32_t, SZ> gen_pows(int32_t base) {
-  std::array<int32_t, SZ> pows = {1};
+constexpr std::array<int16_t, SZ> gen_pows(int16_t base) {
+  std::array<int16_t, SZ> pows = {1};
   for (int i = 1; i < SZ; i++) {
-    pows[i] = center_lift(pows[i - 1] * base);
+    pows[i] = center_lift(int32_t(pows[i - 1]) * base);
   }
   return pows;
 }
 
+constexpr int32_t BARRET_Q = 467759;
+
 constexpr int ORD = 4590;
-constexpr int32_t W_4590 = 11;
+constexpr int16_t W_4590 = 11;
 
-constexpr std::array<int32_t, ORD> ws = gen_pows<ORD>(W_4590);
+constexpr std::array<int16_t, ORD> ws = gen_pows<ORD>(W_4590);
 
-constexpr int32_t W_10 = ws[ORD / 10];
-constexpr int32_t W_5 = ws[ORD / 5];
-constexpr int32_t W_9 = ws[ORD / 9];
-constexpr int32_t W_3 = ws[ORD / 3];
+constexpr int16_t W_10 = ws[ORD / 10];
+constexpr int16_t W_5 = ws[ORD / 5];
+constexpr int16_t W_9 = ws[ORD / 9];
+constexpr int16_t W_3 = ws[ORD / 3];
 
-constexpr std::array<int32_t, 5> w_5s = gen_pows<5>(W_5);
-constexpr std::array<int32_t, 10> w_10s = gen_pows<10>(W_10);
-constexpr std::array<int32_t, 9> w_9s = gen_pows<9>(W_9);
-constexpr std::array<int32_t, 3> w_3s = gen_pows<3>(W_3);
+constexpr std::array<int16_t, 17> w_5s = gen_pows<17>(W_5);
+constexpr std::array<int16_t, 10> w_10s = gen_pows<10>(W_10);
+constexpr std::array<int16_t, 17> w_9s = gen_pows<17>(W_9);
+constexpr std::array<int16_t, 5> w_3s = gen_pows<5>(W_3);
 
-void ntt_10(int16_t ntt[10][9][16]) {
+void debug_int16x8(int16x8_t val) {
+  int16_t tmp[8];
+  vst1q_s16(&tmp[0], val);
+  for (int i = 0; i < 8; i++) {
+    std::cerr << tmp[i] << " \n"[i == 7];
+  }
+}
+
+void debug_int32x4(int32x4_t val) {
+  int32_t tmp[4];
+  vst1q_s32(&tmp[0], val);
+  for (int i = 0; i < 4; i++) {
+    std::cerr << tmp[i] << " \n"[i == 3];
+  }
+}
+
+void ntt_10(int16_t ntt[10][9][16], int16_t poly[1440]) {
 
   for (int j = 0; j < 9; j++) {
-    for (int k0 = 0; k0 < 16; k0 += 8) {
-
-      int16_t tmp1[5][2][8] = {};
-      int16_t tmp2[5][2][8] = {};
-
-      for (int i = j + 5; i < j + 11; i++) {
-        for (int dk = 0; dk < 8; dk++) {
-          tmp1[i % 5][i % 2][dk] = ntt[i % 10][j][k0 + dk];
+    {
+      int32x4_t wide_front_low[5][2];
+      int32x4_t wide_front_high[5][2];
+      for (int i1 = 0; i1 < 5; i1++) {
+        for (int i2 = 0; i2 < 2; i2++) {
+          wide_front_low[i1][i2] = vdupq_n_s32(0);
+          wide_front_high[i1][i2] = vdupq_n_s32(0);
         }
       }
 
-      // TODO skip zero
-      for (int i2 = 0; i2 < 2; i2++) {
-        for (int i1 = 0; i1 < 5; i1++) {
-          for (int ii1 = 0; ii1 < 5; ii1++) {
-            for (int dk = 0; dk < 8; dk++) {
-              tmp2[i1][i2][dk] += center_lift(w_5s[i1 * ii1 % 5] * tmp1[ii1][i2][dk]);
-              assert(-3 * CENTER_MAG <= tmp2[i1][i2][dk] && tmp2[i1][i2][dk] <= 3 * CENTER_MAG);
-            }
-            // |tmp2| ~ 1.5Q
+      for (int i = j, t = 0, idx = j; t < (j <= 2 ? 6 : 5); t++, i = (i + 9) % 10, idx += 9) {
+        int ii1 = i % 5;
+        int i2 = i % 2;
+        int16x8_t front = vld1q_s16(&poly[idx * 16]);
+        if (i2 == 0) {
+          for (int i1 = 0; i1 < 5; i1++) {
+            int16_t twiddle = w_5s[i1 * ii1];
+            wide_front_low[i1][0] = vmlal_n_s16(wide_front_low[i1][0], vget_low_s16(front), twiddle);
+            wide_front_high[i1][0] = vmlal_high_n_s16(wide_front_high[i1][0], front, twiddle);
+          }
+        }
+        else {
+          for (int i1 = 0; i1 < 5; i1++) {
+            int16_t twiddle = w_5s[i1 * ii1];
+            wide_front_low[i1][1] = vmlal_n_s16(wide_front_low[i1][1], vget_low_s16(front), twiddle);
+            wide_front_high[i1][1] = vmlal_high_n_s16(wide_front_high[i1][1], front, twiddle);
           }
         }
       }
 
       for (int i1 = 0; i1 < 5; i1++) {
-        for (int dk = 0; dk < 8; dk++) {
-          tmp1[i1][0][dk] = tmp2[i1][0][dk] + tmp2[i1][1][dk];
-          tmp1[i1][1][dk] = tmp2[i1][0][dk] - tmp2[i1][1][dk];
-          assert(-6 * CENTER_MAG <= tmp1[i1][0][dk] && tmp1[i1][0][dk] <= 6 * CENTER_MAG);
-          assert(-6 * CENTER_MAG <= tmp1[i1][1][dk] && tmp1[i1][1][dk] <= 6 * CENTER_MAG);
-        }
-        // |tmp1| ~ 3Q
-      }
+        int16x8_t tmp_front[2];
+        int16x8_t result_front[2];
+        for (int i2 = 0; i2 < 2; i2++) {
+          int32x4_t esti;
+          esti = vqrdmulhq_n_s32(wide_front_low[i1][i2], BARRET_Q);
+          wide_front_low[i1][i2] = vmlsq_n_s32(wide_front_low[i1][i2], esti, Q);
+          esti = vqrdmulhq_n_s32(wide_front_high[i1][i2], BARRET_Q);
+          wide_front_high[i1][i2] = vmlsq_n_s32(wide_front_high[i1][i2], esti, Q);
 
-      for (int i = 0; i < 10; i++) {
-        for (int dk = 0; dk < 8; dk++) {
-          ntt[7 * i % 10][j][k0 + dk] = tmp1[i % 5][i % 2][dk];
+          tmp_front[i2] = vuzp1q_s16(vreinterpretq_s16_s32(wide_front_low[i1][i2]), vreinterpretq_s16_s32(wide_front_high[i1][i2]));
         }
-        // |ntt| ~ 3Q
+        result_front[0] = vaddq_s16(tmp_front[0], tmp_front[1]);
+        result_front[1] = vsubq_s16(tmp_front[0], tmp_front[1]);
+        vst1q_s16(&ntt[2 * i1][j][0], result_front[0]);
+        vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][0], result_front[1]);
       }
-
     }
+
+    {
+      int32x4_t wide_back_low[5][2];
+      int32x4_t wide_back_high[5][2];
+      for (int i1 = 0; i1 < 5; i1++) {
+        for (int i2 = 0; i2 < 2; i2++) {
+          wide_back_low[i1][i2] = vdupq_n_s32(0);
+          wide_back_high[i1][i2] = vdupq_n_s32(0);
+        }
+      }
+
+      for (int i = j, t = 0, idx = j; t < (j <= 2 ? 6 : 5); t++, i = (i + 9) % 10, idx += 9) {
+        int ii1 = i % 5;
+        int i2 = i % 2;
+        int16x8_t back = vld1q_s16(&poly[idx * 16 + 8]);
+        if (i2 == 0) {
+          for (int i1 = 0; i1 < 5; i1++) {
+            int16_t twiddle = w_5s[i1 * ii1];
+            wide_back_low[i1][0] = vmlal_n_s16(wide_back_low[i1][0], vget_low_s16(back), twiddle);
+            wide_back_high[i1][0] = vmlal_high_n_s16(wide_back_high[i1][0], back, twiddle);
+          }
+        }
+        else {
+          for (int i1 = 0; i1 < 5; i1++) {
+            int16_t twiddle = w_5s[i1 * ii1];
+            wide_back_low[i1][1] = vmlal_n_s16(wide_back_low[i1][1], vget_low_s16(back), twiddle);
+            wide_back_high[i1][1] = vmlal_high_n_s16(wide_back_high[i1][1], back, twiddle);
+          }
+        }
+      }
+
+      for (int i1 = 0; i1 < 5; i1++) {
+        int16x8_t tmp_back[2];
+        int16x8_t result_back[2];
+        for (int i2 = 0; i2 < 2; i2++) {
+          int32x4_t esti;
+          esti = vqrdmulhq_n_s32(wide_back_low[i1][i2], BARRET_Q);
+          wide_back_low[i1][i2] = vmlsq_n_s32(wide_back_low[i1][i2], esti, Q);
+          esti = vqrdmulhq_n_s32(wide_back_high[i1][i2], BARRET_Q);
+          wide_back_high[i1][i2] = vmlsq_n_s32(wide_back_high[i1][i2], esti, Q);
+
+          tmp_back[i2] = vuzp1q_s16(vreinterpretq_s16_s32(wide_back_low[i1][i2]), vreinterpretq_s16_s32(wide_back_high[i1][i2]));
+        }
+        result_back[0] = vaddq_s16(tmp_back[0], tmp_back[1]);
+        result_back[1] = vsubq_s16(tmp_back[0], tmp_back[1]);
+        vst1q_s16(&ntt[2 * i1][j][8], result_back[0]);
+        vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][8], result_back[1]);
+      }
+    }
+
+    // std::cerr << "ntt_10, j = " << j << '\n';
+    // for (int i = 0; i < 10; i++) {
+    //   std::cerr << "  i = " << i << '\n';
+    //   std::cerr << "    ";
+    //   for (int k = 0; k < 16; k++) {
+    //     std::cerr << ntt[i][j][k]  << " \n"[k == 15];
+    //   }
+    // }
   }
 
 }
@@ -98,7 +180,7 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
         for (int i1 = 0; i1 < 5; i1++) {
           for (int ii1 = 0; ii1 < 5; ii1++) {
             for (int dk = 0; dk < 8; dk++) {
-              tmp2[i1][i2][dk] += center_lift(w_5s[i1 * ii1 % 5] * tmp1[ii1][i2][dk]);
+              tmp2[i1][i2][dk] += center_lift(int32_t(w_5s[i1 * ii1]) * tmp1[ii1][i2][dk]);
               assert(-5 * CENTER_MAG <= tmp2[i1][i2][dk] && tmp2[i1][i2][dk] <= 5 * CENTER_MAG);
             }
             // |tmp2| ~ 2.5Q
@@ -146,7 +228,7 @@ void ntt_9(int16_t ntt[10][9][16]) {
         for (int j1 = 0; j1 < 3; j1++) {
           for (int jj1 = 0; jj1 < 3; jj1++) {
             for (int dk = 0; dk < 8; dk++) {
-              tmp2[j1][j2][dk] += center_lift(w_3s[j1 * jj1 % 3] * tmp1[jj1][j2][dk]);
+              tmp2[j1][j2][dk] += center_lift(int32_t(w_3s[j1 * jj1]) * tmp1[jj1][j2][dk]);
               assert(-3 * CENTER_MAG <= tmp2[j1][j2][dk] && tmp2[j1][j2][dk] <= 3 * CENTER_MAG);
             }
             // |tmp2| ~ 1.5Q
@@ -160,7 +242,7 @@ void ntt_9(int16_t ntt[10][9][16]) {
         for (int j2 = 0; j2 < 3; j2++) {
           for (int jj2 = 0; jj2 < 3; jj2++) {
             for (int dk = 0; dk < 8; dk++) {
-              tmp1[j1][j2][dk] += center_lift(w_9s[(j1 + 3 * j2) * jj2 % 9] * tmp2[j1][jj2][dk]);
+              tmp1[j1][j2][dk] += center_lift(int32_t(w_9s[(j1 + 3 * j2) * jj2]) * tmp2[j1][jj2][dk]);
               assert(-3 * CENTER_MAG <= tmp1[j1][j2][dk] && tmp1[j1][j2][dk] <= 3 * CENTER_MAG);
             }
             // |tmp1| ~ 1.5Q
@@ -198,7 +280,7 @@ void intt_9_x9(int16_t ntt[10][9][16]) {
         for (int j1 = 0; j1 < 3; j1++) {
           for (int jj1 = 0; jj1 < 3; jj1++) {
             for (int dk = 0; dk < 8; dk++) {
-              tmp2[j1][j2][dk] += center_lift(w_3s[j1 * jj1 % 3] * tmp1[jj1][j2][dk]);
+              tmp2[j1][j2][dk] += center_lift(int32_t(w_3s[j1 * jj1]) * tmp1[jj1][j2][dk]);
               assert(-3 * CENTER_MAG <= tmp2[j1][j2][dk] && tmp2[j1][j2][dk] <= 3 * CENTER_MAG);
             }
             // |tmp2| ~ 1.5Q
@@ -212,7 +294,7 @@ void intt_9_x9(int16_t ntt[10][9][16]) {
         for (int j2 = 0; j2 < 3; j2++) {
           for (int jj2 = 0; jj2 < 3; jj2++) {
             for (int dk = 0; dk < 8; dk++) {
-              tmp1[j1][j2][dk] += center_lift(w_9s[(j1 + 3 * j2) * jj2 % 9] * tmp2[j1][jj2][dk]);
+              tmp1[j1][j2][dk] += center_lift(int32_t(w_9s[(j1 + 3 * j2) * jj2]) * tmp2[j1][jj2][dk]);
               assert(-3 * CENTER_MAG <= tmp1[j1][j2][dk] && tmp1[j1][j2][dk] <= 3 * CENTER_MAG);
             }
             // |tmp1| ~ 1.5Q
@@ -256,12 +338,8 @@ void base_mul(int16_t in1_ntt[10][9][16], int16_t in2_ntt[10][9][16], int16_t ou
   }
 }
 
-void forward(int16_t in_poly[P], int16_t out_ntt[10][9][16]) {
-  for (int i = 0; i < 6 * 9 * 16; i++) {
-    int t = i >> 4;
-    out_ntt[t % 10][t % 9][i % 16] = i < P ? in_poly[i] : 0;
-  }
-  ntt_10(out_ntt);
+void forward(int16_t in_poly[], int16_t out_ntt[10][9][16]) {
+  ntt_10(out_ntt, in_poly);
   // print_ntt(out_ntt);
   ntt_9(out_ntt);
   // print_ntt(out_ntt);
@@ -286,7 +364,8 @@ void mult_low(int16_t in1_low[81], int16_t in2_low[81], int16_t out_low[81]) {
   }
 }
 
-// inx_poly length must >= 761
+// inx_poly length must >= 768
+// inx_poly[761 : 768] filled with zero
 void mult(int16_t in1_poly[], int16_t in2_poly[], int16_t out_poly[]) {
   int16_t in1_ntt[10][9][16];
   int16_t in2_ntt[10][9][16];

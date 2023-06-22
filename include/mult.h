@@ -20,6 +20,6 @@ constexpr int64_t center_lift(int64_t val) {
   return val;
 }
 
-void mult(int16_t in1[P], int16_t in2[P], int16_t out[P]);
+void mult(int16_t in1[], int16_t in2[], int16_t out[]);
 
 #endif // MULT_H
