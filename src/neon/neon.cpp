@@ -170,7 +170,7 @@ void ntt_10(int16_t ntt[10][9][16], int16_t poly[1440]) {
 
 }
 
-void intt_10_x10(int16_t ntt[10][9][16]) {
+void intt_10_x10(int16_t ntt[10][9][16], int16_t poly[1440]) {
 
   for (int j = 0; j < 9; j++) {
     {
@@ -227,8 +227,11 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
         }
         result_front[0] = vaddq_s16(tmp_front[0], tmp_front[1]);
         result_front[1] = vsubq_s16(tmp_front[0], tmp_front[1]);
-        vst1q_s16(&ntt[2 * i1][j][0], result_front[0]);
-        vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][0], result_front[1]);
+        // vst1q_s16(&ntt[2 * i1][j][0], result_front[0]);
+        // vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][0], result_front[1]);
+        vst1q_s16(&poly[((2 * i1) * 81 + 10 * j) % 90 * 16], result_front[0]);
+        vst1q_s16(&poly[((2 * i1 + 5) * 81 + 10 * j) % 90 * 16], result_front[1]);
+        // std::cerr << i1 << ' ' << j << ": put to " << (((2 * i1) * 81 + 10 * j) % 90 * 16) << " and " << ((2 * i1 + 5) * 81 + 10 * j) % 90 * 16 << '\n';
       }
     }
 
@@ -286,8 +289,10 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
         }
         result_back[0] = vaddq_s16(tmp_back[0], tmp_back[1]);
         result_back[1] = vsubq_s16(tmp_back[0], tmp_back[1]);
-        vst1q_s16(&ntt[2 * i1][j][8], result_back[0]);
-        vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][8], result_back[1]);
+        // vst1q_s16(&ntt[2 * i1][j][8], result_back[0]);
+        // vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][8], result_back[1]);
+        vst1q_s16(&poly[((2 * i1) * 81 + 10 * j) % 90 * 16 + 8], result_back[0]);
+        vst1q_s16(&poly[((2 * i1 + 5) * 81 + 10 * j) % 90 * 16 + 8], result_back[1]);
       }
     }
 
@@ -663,14 +668,38 @@ void forward(int16_t in_poly[], int16_t out_ntt[10][9][16]) {
   // print_ntt(out_ntt);
 }
 
-constexpr int64_t INV90 = -51;
+
+constexpr int32_t INV90 = -51;
+constexpr int32_t BARRET_INV90_Q = -23855732;
+void div90_main(int16_t main_poly[1440]) {
+  int16x8_t zeros = vdupq_n_s16(0);
+  for (int i = 0; i < 1440; i += 8) {
+    int16x8_t chunk = vld1q_s16(&main_poly[i]);
+    int32x4_t wide_low = vmovl_s16(vget_low_s16(chunk));
+    int32x4_t wide_high = vmovl_high_s16(chunk);
+
+    int32x4_t esti;
+
+    esti = vqrdmulhq_n_s32(wide_low, BARRET_INV90_Q);
+    wide_low = vmulq_n_s32(wide_low, INV90);
+    wide_low = vmlsq_n_s32(wide_low, esti, Q);
+
+    esti = vqrdmulhq_n_s32(wide_high, BARRET_INV90_Q);
+    wide_high = vmulq_n_s32(wide_high, INV90);
+    wide_high = vmlsq_n_s32(wide_high, esti, Q);
+
+    chunk = vuzp1q_s16(vreinterpretq_s16_s32(wide_low), vreinterpretq_s16_s32(wide_high));
+    vst1q_s16(&main_poly[i], chunk);
+  }
+}
 void backward(int16_t in_ntt[10][9][16], int16_t out_main[1440]) {
   intt_9_x9(in_ntt);
-  intt_10_x10(in_ntt);
-  for (int i = 0; i < 1440; i++) {
-    int t = i >> 4;
-    out_main[i] = center_lift(in_ntt[t % 10][t % 9][i % 16] * INV90);
-  }
+  intt_10_x10(in_ntt, out_main);
+  div90_main(out_main);
+  // for (int i = 0; i < 1440; i++) {
+  //   int t = i >> 4;
+  //   out_main[i] = center_lift(in_ntt[t % 10][t % 9][i % 16] * INV90);
+  // }
 }
 
 void mult_low(int16_t in1_low[81], int16_t in2_low[81], int16_t out_low[81]) {
@@ -682,14 +711,90 @@ void mult_low(int16_t in1_low[81], int16_t in2_low[81], int16_t out_low[81]) {
   }
 }
 
+// main_poly length must >= 1448
+// poly length must >= 768
+void crt(int16_t poly[], int16_t main_poly[], int16_t low[]) {
+  main_poly[1440] = main_poly[0];
+  for (int i = 0; i < 680; i += 8) {
+    int16x8_t a = vld1q_s16(&main_poly[i + 760]);
+    int16x8_t b = vld1q_s16(&main_poly[i + 761]);
+    int16x8_t c;
+    c = vaddq_s16(a, b);
+    vst1q_s16(&poly[i], c);
+  }
+  for (int i = 680; i < 760; i += 8) {
+    int16x8_t a = vld1q_s16(&main_poly[i - 680]);
+    int16x8_t b = vld1q_s16(&main_poly[i - 679]);
+    int16x8_t c;
+    c = vaddq_s16(a, b);
+    vst1q_s16(&poly[i], c);
+  }
+  poly[760] = main_poly[80];
+  poly[0] -= main_poly[760];
+  // for (int i = 81; i < 761; i++) {
+  //   poly[i] += main_poly[i];
+  // }
+  for (int i = 81; i < 761; i += 8) {
+    int16x8_t a = vld1q_s16(&main_poly[i]);
+    int16x8_t c = vld1q_s16(&poly[i]);
+    c = vaddq_s16(c, a);
+    vst1q_s16(&poly[i], c);
+  }
+  for (int i = 680; i < 760; i += 8) {
+    int16x8_t a = vld1q_s16(&low[i - 680]);
+    int16x8_t b = vld1q_s16(&low[i - 679]);
+    a = vaddq_s16(a, b);
+    int16x8_t c = vld1q_s16(&poly[i]);
+    c = vsubq_s16(c, a);
+    vst1q_s16(&poly[i], c);
+  }
+  poly[679] -= low[0];
+  poly[760] -= low[80];
+  // for (int i = 0; i < 80; i++) {
+  //   poly[i] += low[i];
+  // }
+  for (int i = 0; i < 80; i += 8) {
+    int16x8_t a = vld1q_s16(&low[i]);
+    int16x8_t c = vld1q_s16(&poly[i]);
+    c = vaddq_s16(c, a);
+    vst1q_s16(&poly[i], c);
+  }
+  poly[80] += low[80];
+}
+
+// poly length must >= 768
+void center_poly(int16_t poly[]) {
+  int16x8_t zeros = vdupq_n_s16(0);
+  for (int i = 0; i < 768; i += 8) {
+    int16x8_t chunk = vld1q_s16(&poly[i]);
+    // debug_int16x8(chunk);
+    int32x4_t wide_low = vmovl_s16(vget_low_s16(chunk));
+    int32x4_t wide_high = vmovl_high_s16(chunk);
+    // debug_int32x4(wide_low);
+    // debug_int32x4(wide_high);
+
+    int32x4_t esti;
+
+    esti = vqrdmulhq_n_s32(wide_low, BARRET_Q);
+    wide_low = vmlsq_n_s32(wide_low, esti, Q);
+
+    esti = vqrdmulhq_n_s32(wide_high, BARRET_Q);
+    wide_high = vmlsq_n_s32(wide_high, esti, Q);
+
+    chunk = vuzp1q_s16(vreinterpretq_s16_s32(wide_low), vreinterpretq_s16_s32(wide_high));
+    vst1q_s16(&poly[i], chunk);
+  }
+}
+
 // inx_poly length must >= 768
 // inx_poly[761 : 768] filled with zero
+// out_poly length must >= 768
 void mult(int16_t in1_poly[], int16_t in2_poly[], int16_t out_poly[]) {
   int16_t in1_ntt[10][9][16];
   int16_t in2_ntt[10][9][16];
   int16_t out_ntt[10][9][16];
   int16_t out_low[81];
-  int16_t out_main[1440];
+  int16_t out_main[1448];
 
   forward(in1_poly, in1_ntt);
   forward(in2_poly, in2_ntt);
@@ -699,24 +804,9 @@ void mult(int16_t in1_poly[], int16_t in2_poly[], int16_t out_poly[]) {
   // for (int i = 0; i < 1440; i++) {
   //   std::cout << out_main[i] << " \n"[i == 1439];
   // }
-  for (int i = 0; i < 761; i++) {
-    out_poly[i] = out_main[(i + 760) % 1440] + out_main[(i + 761) % 1440];
-  }
-  out_poly[0] -= out_main[760];
-  out_poly[760] -= out_main[81];
-  for (int i = 81; i < 761; i++) {
-    out_poly[i] += out_main[i];
-  }
-  for (int i = 680; i < 760; i++) {
-    out_poly[i] -= out_low[i - 680] + out_low[i - 679];
-  }
-  out_poly[679] -= out_low[0];
-  out_poly[760] -= out_low[80];
-  for (int i = 0; i < 80; i++) {
-    out_poly[i] += out_low[i];
-  }
-  out_poly[80] += out_low[80];
-  for (int i = 0; i < 761; i++) {
-    out_poly[i] = center_lift(out_poly[i]);
-  }
+  crt(out_poly, out_main, out_low);
+  center_poly(out_poly);
+  // for (int i = 0; i < 761; i++) {
+  //   out_poly[i] = center_lift(out_poly[i]);
+  // }
 }

@@ -23,3 +23,11 @@ target_include_directories(ntt_9_profile PUBLIC ../include)
 add_executable(intt_9_x9_profile intt_9_x9_profile.cpp)
 target_link_libraries(intt_9_x9_profile neon)
 target_include_directories(intt_9_x9_profile PUBLIC ../include)
+
+add_executable(crt_profile crt_profile.cpp)
+target_link_libraries(crt_profile neon)
+target_include_directories(crt_profile PUBLIC ../include)
+
+add_executable(center_poly_profile center_poly_profile.cpp)
+target_link_libraries(center_poly_profile neon)
+target_include_directories(center_poly_profile PUBLIC ../include)
