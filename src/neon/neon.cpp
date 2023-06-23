@@ -342,7 +342,7 @@ void ntt_9(int16_t ntt[10][9][16]) {
             }
           }
         }
-        for (int j1 = 0; j1 < 3; j1++) {
+        for (int j1 = 1; j1 < 3; j1++) {
           int32x4_t esti;
           int32_t twiddle = w_9s[j1 * j2];
 
@@ -376,7 +376,7 @@ void ntt_9(int16_t ntt[10][9][16]) {
           }
         }
         for (int j2 = 0; j2 < 3; j2++) {
-          if (j2 > 0 || true) {
+          if (j2 > 0) {
             int32x4_t esti;
 
             esti = vqrdmulhq_n_s32(result_front_low[j2], BARRET_Q);
@@ -412,7 +412,7 @@ void ntt_9(int16_t ntt[10][9][16]) {
             }
           }
         }
-        for (int j1 = 0; j1 < 3; j1++) {
+        for (int j1 = 1; j1 < 3; j1++) {
           int32x4_t esti;
           int32_t twiddle = w_9s[j1 * j2];
 
@@ -446,7 +446,7 @@ void ntt_9(int16_t ntt[10][9][16]) {
           }
         }
         for (int j2 = 0; j2 < 3; j2++) {
-          if (j2 > 0 || true) {
+          if (j2 > 0) {
             int32x4_t esti;
 
             esti = vqrdmulhq_n_s32(result_back_low[j2], BARRET_Q);
@@ -506,7 +506,7 @@ void intt_9_x9(int16_t ntt[10][9][16]) {
             }
           }
         }
-        for (int j1 = 0; j1 < 3; j1++) {
+        for (int j1 = 1; j1 < 3; j1++) {
           int32x4_t esti;
           int32_t twiddle = w_9s[j1 * j2];
 
@@ -540,7 +540,7 @@ void intt_9_x9(int16_t ntt[10][9][16]) {
           }
         }
         for (int j2 = 0; j2 < 3; j2++) {
-          if (j2 > 0 || true) {
+          if (j2 > 0) {
             int32x4_t esti;
 
             esti = vqrdmulhq_n_s32(result_front_low[j2], BARRET_Q);
@@ -576,7 +576,7 @@ void intt_9_x9(int16_t ntt[10][9][16]) {
             }
           }
         }
-        for (int j1 = 0; j1 < 3; j1++) {
+        for (int j1 = 1; j1 < 3; j1++) {
           int32x4_t esti;
           int32_t twiddle = w_9s[j1 * j2];
 
@@ -610,7 +610,7 @@ void intt_9_x9(int16_t ntt[10][9][16]) {
           }
         }
         for (int j2 = 0; j2 < 3; j2++) {
-          if (j2 > 0 || true) {
+          if (j2 > 0) {
             int32x4_t esti;
 
             esti = vqrdmulhq_n_s32(result_back_low[j2], BARRET_Q);

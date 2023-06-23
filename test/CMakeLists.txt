@@ -31,3 +31,7 @@ target_include_directories(crt_profile PUBLIC ../include)
 add_executable(center_poly_profile center_poly_profile.cpp)
 target_link_libraries(center_poly_profile neon)
 target_include_directories(center_poly_profile PUBLIC ../include)
+
+add_executable(div90_profile div90_profile.cpp)
+target_link_libraries(div90_profile neon)
+target_include_directories(div90_profile PUBLIC ../include)
