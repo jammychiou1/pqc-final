@@ -3,7 +3,7 @@
 #include "mult.h"
 
 int main() {
-  int16_t a[768] = {}, b[768] = {}, c[P];
+  int16_t a[768] = {}, b[768] = {}, c[768];
   int n;
   std::cin >> n;
   for (int i = 0; i <= n; i++) {
