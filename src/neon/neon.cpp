@@ -17,6 +17,14 @@ constexpr std::array<int16_t, SZ> gen_pows(int16_t base) {
 }
 
 constexpr int32_t BARRET_Q = 467759;
+constexpr int32_t BARRET_xW_9_Q = -751221681;
+constexpr int32_t BARRET_xW_9_p2_Q = -423790064;
+constexpr int32_t BARRET_xW_9_p4_Q = -445774759;
+constexpr int32_t BARRET_TWIST_Q[3][3] = {
+  {BARRET_Q, BARRET_Q, BARRET_Q},
+  {BARRET_Q, BARRET_xW_9_Q, BARRET_xW_9_p2_Q},
+  {BARRET_Q, BARRET_xW_9_p2_Q, BARRET_xW_9_p4_Q}
+};
 
 constexpr int ORD = 4590;
 constexpr int16_t W_4590 = 11;
@@ -294,64 +302,168 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
 
   }
 
-  // for (int i = 0; i < 10; i++) {
-  //   for (int j = 0; j < 9; j++) {
-  //     for (int k = 0; k < 16; k++) {
-  //       ntt[i][j][k] = center_lift(ntt[i][j][k]);
-  //     }
-  //   }
-  // }
-
 }
 
 void ntt_9(int16_t ntt[10][9][16]) {
 
   for (int i = 0; i < 10; i++) {
-    for (int k0 = 0; k0 < 16; k0 += 8) {
+    // std::cerr << "ntt_9 input, i = " << i << '\n';
+    // for (int j = 0; j < 9; j++) {
+    //   std::cerr << "  j = " << j << '\n';
+    //   std::cerr << "    ";
+    //   for (int k = 0; k < 16; k++) {
+    //     std::cerr << ntt[i][j][k]  << " \n"[k == 15];
+    //   }
+    // }
 
-      int16_t tmp1[3][3][8] = {};
-      int16_t tmp2[3][3][8] = {};
-
-      for (int j = 0; j < 9; j++) {
-        for (int dk = 0; dk < 8; dk++) {
-          tmp1[j / 3][j % 3][dk] = ntt[i][j][k0 + dk];
-        }
-      }
+    {
+      int32x4_t wide_front_low[3][3];
+      int32x4_t wide_front_high[3][3];
 
       for (int j2 = 0; j2 < 3; j2++) {
-        for (int j1 = 0; j1 < 3; j1++) {
-          for (int jj1 = 0; jj1 < 3; jj1++) {
-            for (int dk = 0; dk < 8; dk++) {
-              tmp2[j1][j2][dk] += center_lift(int32_t(w_3s[j1 * jj1]) * tmp1[jj1][j2][dk]);
-              assert(-3 * CENTER_MAG <= tmp2[j1][j2][dk] && tmp2[j1][j2][dk] <= 3 * CENTER_MAG);
+        for (int jj1 = 0; jj1 < 3; jj1++) {
+          int16x8_t front = vld1q_s16(&ntt[i][3 * jj1 + j2][0]);
+          if (jj1 == 0) {
+            for (int j1 = 0; j1 < 3; j1++) {
+              wide_front_low[j1][j2] = vmovl_s16(vget_low_s16(front));
+              wide_front_high[j1][j2] = vmovl_high_s16(front);
             }
-            // |tmp2| ~ 1.5Q
+          }
+          else {
+            for (int j1 = 0; j1 < 3; j1++) {
+              int16_t twiddle = w_3s[j1 * jj1];
+              wide_front_low[j1][j2] = vmlal_n_s16(wide_front_low[j1][j2], vget_low_s16(front), twiddle);
+              wide_front_high[j1][j2] = vmlal_high_n_s16(wide_front_high[j1][j2], front, twiddle);
+            }
           }
         }
-      }
+        for (int j1 = 0; j1 < 3; j1++) {
+          int32x4_t esti;
+          int32_t twiddle = w_9s[j1 * j2];
 
-      std::memset(tmp1, 0, sizeof(tmp1));
+          esti = vqrdmulhq_n_s32(wide_front_low[j1][j2], BARRET_TWIST_Q[j1][j2]);
+          wide_front_low[j1][j2] = vmulq_n_s32(wide_front_low[j1][j2], twiddle);
+          wide_front_low[j1][j2] = vmlsq_n_s32(wide_front_low[j1][j2], esti, Q);
+
+          esti = vqrdmulhq_n_s32(wide_front_high[j1][j2], BARRET_TWIST_Q[j1][j2]);
+          wide_front_high[j1][j2] = vmulq_n_s32(wide_front_high[j1][j2], twiddle);
+          wide_front_high[j1][j2] = vmlsq_n_s32(wide_front_high[j1][j2], esti, Q);
+        }
+      }
 
       for (int j1 = 0; j1 < 3; j1++) {
-        for (int j2 = 0; j2 < 3; j2++) {
-          for (int jj2 = 0; jj2 < 3; jj2++) {
-            for (int dk = 0; dk < 8; dk++) {
-              tmp1[j1][j2][dk] += center_lift(int32_t(w_9s[(j1 + 3 * j2) * jj2]) * tmp2[j1][jj2][dk]);
-              assert(-3 * CENTER_MAG <= tmp1[j1][j2][dk] && tmp1[j1][j2][dk] <= 3 * CENTER_MAG);
+        int32x4_t result_front_low[3];
+        int32x4_t result_front_high[3];
+
+        for (int jj2 = 0; jj2 < 3; jj2++) {
+          if (jj2 == 0) {
+            for (int j2 = 0; j2 < 3; j2++) {
+              result_front_low[j2] = wide_front_low[j1][jj2];
+              result_front_high[j2] = wide_front_high[j1][jj2];
             }
-            // |tmp1| ~ 1.5Q
+          }
+          else {
+            for (int j2 = 0; j2 < 3; j2++) {
+              int32_t twiddle = w_3s[j2 * jj2];
+              result_front_low[j2] = vmlaq_n_s32(result_front_low[j2], wide_front_low[j1][jj2], twiddle);
+              result_front_high[j2] = vmlaq_n_s32(result_front_high[j2], wide_front_high[j1][jj2], twiddle);
+            }
           }
         }
-      }
+        for (int j2 = 0; j2 < 3; j2++) {
+          if (j2 > 0 || true) {
+            int32x4_t esti;
 
-      for (int j = 0; j < 9; j++) {
-        for (int dk = 0; dk < 8; dk++) {
-          ntt[i][j][k0 + dk] = tmp1[j % 3][j / 3][dk];
+            esti = vqrdmulhq_n_s32(result_front_low[j2], BARRET_Q);
+            result_front_low[j2] = vmlsq_n_s32(result_front_low[j2], esti, Q);
+
+            esti = vqrdmulhq_n_s32(result_front_high[j2], BARRET_Q);
+            result_front_high[j2] = vmlsq_n_s32(result_front_high[j2], esti, Q);
+          }
+          int16x8_t result_front = vuzp1q_s16(vreinterpretq_s16_s32(result_front_low[j2]), vreinterpretq_s16_s32(result_front_high[j2]));
+          vst1q_s16(&ntt[i][j1 + 3 * j2][0], result_front);
         }
-        // |ntt| ~ 1.5Q
+      }
+    }
+
+    {
+      int32x4_t wide_back_low[3][3];
+      int32x4_t wide_back_high[3][3];
+
+      for (int j2 = 0; j2 < 3; j2++) {
+        for (int jj1 = 0; jj1 < 3; jj1++) {
+          int16x8_t back = vld1q_s16(&ntt[i][3 * jj1 + j2][8]);
+          if (jj1 == 0) {
+            for (int j1 = 0; j1 < 3; j1++) {
+              wide_back_low[j1][j2] = vmovl_s16(vget_low_s16(back));
+              wide_back_high[j1][j2] = vmovl_high_s16(back);
+            }
+          }
+          else {
+            for (int j1 = 0; j1 < 3; j1++) {
+              int16_t twiddle = w_3s[j1 * jj1];
+              wide_back_low[j1][j2] = vmlal_n_s16(wide_back_low[j1][j2], vget_low_s16(back), twiddle);
+              wide_back_high[j1][j2] = vmlal_high_n_s16(wide_back_high[j1][j2], back, twiddle);
+            }
+          }
+        }
+        for (int j1 = 0; j1 < 3; j1++) {
+          int32x4_t esti;
+          int32_t twiddle = w_9s[j1 * j2];
+
+          esti = vqrdmulhq_n_s32(wide_back_low[j1][j2], BARRET_TWIST_Q[j1][j2]);
+          wide_back_low[j1][j2] = vmulq_n_s32(wide_back_low[j1][j2], twiddle);
+          wide_back_low[j1][j2] = vmlsq_n_s32(wide_back_low[j1][j2], esti, Q);
+
+          esti = vqrdmulhq_n_s32(wide_back_high[j1][j2], BARRET_TWIST_Q[j1][j2]);
+          wide_back_high[j1][j2] = vmulq_n_s32(wide_back_high[j1][j2], twiddle);
+          wide_back_high[j1][j2] = vmlsq_n_s32(wide_back_high[j1][j2], esti, Q);
+        }
       }
 
+      for (int j1 = 0; j1 < 3; j1++) {
+        int32x4_t result_back_low[3];
+        int32x4_t result_back_high[3];
+
+        for (int jj2 = 0; jj2 < 3; jj2++) {
+          if (jj2 == 0) {
+            for (int j2 = 0; j2 < 3; j2++) {
+              result_back_low[j2] = wide_back_low[j1][jj2];
+              result_back_high[j2] = wide_back_high[j1][jj2];
+            }
+          }
+          else {
+            for (int j2 = 0; j2 < 3; j2++) {
+              int32_t twiddle = w_3s[j2 * jj2];
+              result_back_low[j2] = vmlaq_n_s32(result_back_low[j2], wide_back_low[j1][jj2], twiddle);
+              result_back_high[j2] = vmlaq_n_s32(result_back_high[j2], wide_back_high[j1][jj2], twiddle);
+            }
+          }
+        }
+        for (int j2 = 0; j2 < 3; j2++) {
+          if (j2 > 0 || true) {
+            int32x4_t esti;
+
+            esti = vqrdmulhq_n_s32(result_back_low[j2], BARRET_Q);
+            result_back_low[j2] = vmlsq_n_s32(result_back_low[j2], esti, Q);
+
+            esti = vqrdmulhq_n_s32(result_back_high[j2], BARRET_Q);
+            result_back_high[j2] = vmlsq_n_s32(result_back_high[j2], esti, Q);
+          }
+          int16x8_t result_back = vuzp1q_s16(vreinterpretq_s16_s32(result_back_low[j2]), vreinterpretq_s16_s32(result_back_high[j2]));
+          vst1q_s16(&ntt[i][j1 + 3 * j2][8], result_back);
+        }
+      }
     }
+
+    // std::cerr << "ntt_9 output, i = " << i << '\n';
+    // for (int j = 0; j < 9; j++) {
+    //   std::cerr << "  j = " << j << '\n';
+    //   std::cerr << "    ";
+    //   for (int k = 0; k < 16; k++) {
+    //     std::cerr << ntt[i][j][k]  << " \n"[k == 15];
+    //   }
+    // }
   }
 
 }
