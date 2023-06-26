@@ -82,10 +82,11 @@ void barret_reduce(int16x8_t &v) {
   v = vmlsq_n_s16(v, esti, Q);
 }
 
-void barret_mul(int16x8_t &v, int16_t coef, int16_t bar) {
+int16x8_t barret_mul(int16x8_t &v, int16_t coef, int16_t bar) {
   int16x8_t esti = vqrdmulhq_n_s16(v, bar);
-  v = vmulq_n_s16(v, coef);
-  v = vmlsq_n_s16(v, esti, Q);
+  int16x8_t res = vmulq_n_s16(v, coef);
+  res = vmlsq_n_s16(res, esti, Q);
+  return res;
 }
 
 void ntt_10(int16_t ntt[10][9][16], int16_t poly[1440]) {
@@ -349,142 +350,84 @@ void ntt_9(int16_t ntt[10][9][16]) {
     // }
 
     {
-      int32x4_t wide_front_low[3][3];
-      int32x4_t wide_front_high[3][3];
+      int16x8_t tmp_front[3][3];
 
       for (int j2 = 0; j2 < 3; j2++) {
-        for (int jj1 = 0; jj1 < 3; jj1++) {
-          int16x8_t front = vld1q_s16(&ntt[i][3 * jj1 + j2][0]);
-          if (jj1 == 0) {
-            for (int j1 = 0; j1 < 3; j1++) {
-              wide_front_low[j1][j2] = vmovl_s16(vget_low_s16(front));
-              wide_front_high[j1][j2] = vmovl_high_s16(front);
-            }
-          }
-          else {
-            for (int j1 = 0; j1 < 3; j1++) {
-              int16_t twiddle = W_3S[j1 * jj1];
-              wide_front_low[j1][j2] = vmlal_n_s16(wide_front_low[j1][j2], vget_low_s16(front), twiddle);
-              wide_front_high[j1][j2] = vmlal_high_n_s16(wide_front_high[j1][j2], front, twiddle);
-            }
-          }
-        }
-        for (int j1 = 1; j1 < 3; j1++) {
-          int32x4_t esti;
-          int32_t twiddle = W_9S[j1 * j2];
+        int16x8_t zeroth_front = vld1q_s16(&ntt[i][j2][0]);
+        int16x8_t first_front = vld1q_s16(&ntt[i][3 + j2][0]);
+        int16x8_t second_front = vld1q_s16(&ntt[i][6 + j2][0]);
+        int16x8_t w_3_first_front = barret_mul(first_front, W_3S[1], W_3_BARS[1]);
+        int16x8_t w_3_second_front = barret_mul(second_front, W_3S[1], W_3_BARS[1]);
 
-          esti = vqrdmulhq_n_s32(wide_front_low[j1][j2], BARRET_TWIST_Q[j1][j2]);
-          wide_front_low[j1][j2] = vmulq_n_s32(wide_front_low[j1][j2], twiddle);
-          wide_front_low[j1][j2] = vmlsq_n_s32(wide_front_low[j1][j2], esti, Q);
-
-          esti = vqrdmulhq_n_s32(wide_front_high[j1][j2], BARRET_TWIST_Q[j1][j2]);
-          wide_front_high[j1][j2] = vmulq_n_s32(wide_front_high[j1][j2], twiddle);
-          wide_front_high[j1][j2] = vmlsq_n_s32(wide_front_high[j1][j2], esti, Q);
+        barret_reduce(zeroth_front);
+        barret_reduce(first_front);
+        barret_reduce(second_front);
+        tmp_front[0][j2] = vaddq_s16(vaddq_s16(zeroth_front, first_front), second_front);
+        tmp_front[1][j2] = vsubq_s16(vaddq_s16(zeroth_front, w_3_first_front), vaddq_s16(second_front, w_3_second_front));
+        tmp_front[2][j2] = vsubq_s16(vaddq_s16(zeroth_front, w_3_second_front), vaddq_s16(first_front, w_3_first_front));
+        if (j2 > 0) {
+          tmp_front[1][j2] = barret_mul(tmp_front[1][j2], W_9S[j2], W_9_BARS[j2]);
+          tmp_front[2][j2] = barret_mul(tmp_front[2][j2], W_9S[2 * j2], W_9_BARS[2 * j2]);
         }
       }
 
       for (int j1 = 0; j1 < 3; j1++) {
-        int32x4_t result_front_low[3];
-        int32x4_t result_front_high[3];
+        int16x8_t zeroth_front = tmp_front[j1][0];
+        int16x8_t first_front = tmp_front[j1][1];
+        int16x8_t second_front = tmp_front[j1][2];
+        int16x8_t w_3_first_front = barret_mul(first_front, W_3S[1], W_3_BARS[1]);
+        int16x8_t w_3_second_front = barret_mul(second_front, W_3S[1], W_3_BARS[1]);
 
-        for (int jj2 = 0; jj2 < 3; jj2++) {
-          if (jj2 == 0) {
-            for (int j2 = 0; j2 < 3; j2++) {
-              result_front_low[j2] = wide_front_low[j1][jj2];
-              result_front_high[j2] = wide_front_high[j1][jj2];
-            }
-          }
-          else {
-            for (int j2 = 0; j2 < 3; j2++) {
-              int32_t twiddle = W_3S[j2 * jj2];
-              result_front_low[j2] = vmlaq_n_s32(result_front_low[j2], wide_front_low[j1][jj2], twiddle);
-              result_front_high[j2] = vmlaq_n_s32(result_front_high[j2], wide_front_high[j1][jj2], twiddle);
-            }
-          }
-        }
-        for (int j2 = 0; j2 < 3; j2++) {
-          if (j2 > 0) {
-            int32x4_t esti;
-
-            esti = vqrdmulhq_n_s32(result_front_low[j2], BARRET_Q);
-            result_front_low[j2] = vmlsq_n_s32(result_front_low[j2], esti, Q);
-
-            esti = vqrdmulhq_n_s32(result_front_high[j2], BARRET_Q);
-            result_front_high[j2] = vmlsq_n_s32(result_front_high[j2], esti, Q);
-          }
-          int16x8_t result_front = vuzp1q_s16(vreinterpretq_s16_s32(result_front_low[j2]), vreinterpretq_s16_s32(result_front_high[j2]));
-          vst1q_s16(&ntt[i][j1 + 3 * j2][0], result_front);
-        }
+        barret_reduce(zeroth_front);
+        barret_reduce(first_front);
+        barret_reduce(second_front);
+        tmp_front[j1][0] = vaddq_s16(vaddq_s16(zeroth_front, first_front), second_front);
+        tmp_front[j1][1] = vsubq_s16(vaddq_s16(zeroth_front, w_3_first_front), vaddq_s16(second_front, w_3_second_front));
+        tmp_front[j1][2] = vsubq_s16(vaddq_s16(zeroth_front, w_3_second_front), vaddq_s16(first_front, w_3_first_front));
+        vst1q_s16(&ntt[i][j1][0], tmp_front[j1][0]);
+        vst1q_s16(&ntt[i][j1 + 3][0], tmp_front[j1][1]);
+        vst1q_s16(&ntt[i][j1 + 6][0], tmp_front[j1][2]);
       }
     }
 
     {
-      int32x4_t wide_back_low[3][3];
-      int32x4_t wide_back_high[3][3];
+      int16x8_t tmp_back[3][3];
 
       for (int j2 = 0; j2 < 3; j2++) {
-        for (int jj1 = 0; jj1 < 3; jj1++) {
-          int16x8_t back = vld1q_s16(&ntt[i][3 * jj1 + j2][8]);
-          if (jj1 == 0) {
-            for (int j1 = 0; j1 < 3; j1++) {
-              wide_back_low[j1][j2] = vmovl_s16(vget_low_s16(back));
-              wide_back_high[j1][j2] = vmovl_high_s16(back);
-            }
-          }
-          else {
-            for (int j1 = 0; j1 < 3; j1++) {
-              int16_t twiddle = W_3S[j1 * jj1];
-              wide_back_low[j1][j2] = vmlal_n_s16(wide_back_low[j1][j2], vget_low_s16(back), twiddle);
-              wide_back_high[j1][j2] = vmlal_high_n_s16(wide_back_high[j1][j2], back, twiddle);
-            }
-          }
-        }
-        for (int j1 = 1; j1 < 3; j1++) {
-          int32x4_t esti;
-          int32_t twiddle = W_9S[j1 * j2];
+        int16x8_t zeroth_back = vld1q_s16(&ntt[i][j2][8]);
+        int16x8_t first_back = vld1q_s16(&ntt[i][3 + j2][8]);
+        int16x8_t second_back = vld1q_s16(&ntt[i][6 + j2][8]);
+        int16x8_t w_3_first_back = barret_mul(first_back, W_3S[1], W_3_BARS[1]);
+        int16x8_t w_3_second_back = barret_mul(second_back, W_3S[1], W_3_BARS[1]);
 
-          esti = vqrdmulhq_n_s32(wide_back_low[j1][j2], BARRET_TWIST_Q[j1][j2]);
-          wide_back_low[j1][j2] = vmulq_n_s32(wide_back_low[j1][j2], twiddle);
-          wide_back_low[j1][j2] = vmlsq_n_s32(wide_back_low[j1][j2], esti, Q);
-
-          esti = vqrdmulhq_n_s32(wide_back_high[j1][j2], BARRET_TWIST_Q[j1][j2]);
-          wide_back_high[j1][j2] = vmulq_n_s32(wide_back_high[j1][j2], twiddle);
-          wide_back_high[j1][j2] = vmlsq_n_s32(wide_back_high[j1][j2], esti, Q);
+        barret_reduce(zeroth_back);
+        barret_reduce(first_back);
+        barret_reduce(second_back);
+        tmp_back[0][j2] = vaddq_s16(vaddq_s16(zeroth_back, first_back), second_back);
+        tmp_back[1][j2] = vsubq_s16(vaddq_s16(zeroth_back, w_3_first_back), vaddq_s16(second_back, w_3_second_back));
+        tmp_back[2][j2] = vsubq_s16(vaddq_s16(zeroth_back, w_3_second_back), vaddq_s16(first_back, w_3_first_back));
+        if (j2 > 0) {
+          tmp_back[1][j2] = barret_mul(tmp_back[1][j2], W_9S[j2], W_9_BARS[j2]);
+          tmp_back[2][j2] = barret_mul(tmp_back[2][j2], W_9S[2 * j2], W_9_BARS[2 * j2]);
         }
       }
 
       for (int j1 = 0; j1 < 3; j1++) {
-        int32x4_t result_back_low[3];
-        int32x4_t result_back_high[3];
+        int16x8_t zeroth_back = tmp_back[j1][0];
+        int16x8_t first_back = tmp_back[j1][1];
+        int16x8_t second_back = tmp_back[j1][2];
+        int16x8_t w_3_first_back = barret_mul(first_back, W_3S[1], W_3_BARS[1]);
+        int16x8_t w_3_second_back = barret_mul(second_back, W_3S[1], W_3_BARS[1]);
 
-        for (int jj2 = 0; jj2 < 3; jj2++) {
-          if (jj2 == 0) {
-            for (int j2 = 0; j2 < 3; j2++) {
-              result_back_low[j2] = wide_back_low[j1][jj2];
-              result_back_high[j2] = wide_back_high[j1][jj2];
-            }
-          }
-          else {
-            for (int j2 = 0; j2 < 3; j2++) {
-              int32_t twiddle = W_3S[j2 * jj2];
-              result_back_low[j2] = vmlaq_n_s32(result_back_low[j2], wide_back_low[j1][jj2], twiddle);
-              result_back_high[j2] = vmlaq_n_s32(result_back_high[j2], wide_back_high[j1][jj2], twiddle);
-            }
-          }
-        }
-        for (int j2 = 0; j2 < 3; j2++) {
-          if (j2 > 0) {
-            int32x4_t esti;
-
-            esti = vqrdmulhq_n_s32(result_back_low[j2], BARRET_Q);
-            result_back_low[j2] = vmlsq_n_s32(result_back_low[j2], esti, Q);
-
-            esti = vqrdmulhq_n_s32(result_back_high[j2], BARRET_Q);
-            result_back_high[j2] = vmlsq_n_s32(result_back_high[j2], esti, Q);
-          }
-          int16x8_t result_back = vuzp1q_s16(vreinterpretq_s16_s32(result_back_low[j2]), vreinterpretq_s16_s32(result_back_high[j2]));
-          vst1q_s16(&ntt[i][j1 + 3 * j2][8], result_back);
-        }
+        barret_reduce(zeroth_back);
+        barret_reduce(first_back);
+        barret_reduce(second_back);
+        tmp_back[j1][0] = vaddq_s16(vaddq_s16(zeroth_back, first_back), second_back);
+        tmp_back[j1][1] = vsubq_s16(vaddq_s16(zeroth_back, w_3_first_back), vaddq_s16(second_back, w_3_second_back));
+        tmp_back[j1][2] = vsubq_s16(vaddq_s16(zeroth_back, w_3_second_back), vaddq_s16(first_back, w_3_first_back));
+        vst1q_s16(&ntt[i][j1][8], tmp_back[j1][0]);
+        vst1q_s16(&ntt[i][j1 + 3][8], tmp_back[j1][1]);
+        vst1q_s16(&ntt[i][j1 + 6][8], tmp_back[j1][2]);
       }
     }
 
@@ -701,14 +644,7 @@ void div90_main(int16_t main_poly[1440]) {
   int16x8_t zeros = vdupq_n_s16(0);
   for (int i = 0; i < 1440; i += 8) {
     int16x8_t chunk = vld1q_s16(&main_poly[i]);
-
-    // std::cerr << "inv90bar: " << INV90_BAR << '\n';
-    // debug_int16x8(chunk);
-    int16x8_t esti = vqrdmulhq_n_s16(chunk, INV90_BAR);
-    chunk = vmulq_n_s16(chunk, INV90);
-    chunk = vmlsq_n_s16(chunk, esti, Q);
-    // debug_int16x8(chunk);
-
+    chunk = barret_mul(chunk, INV90, INV90_BAR);
     vst1q_s16(&main_poly[i], chunk);
   }
 }
