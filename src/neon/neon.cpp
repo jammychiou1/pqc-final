@@ -170,7 +170,7 @@ void ntt_10(int16_t ntt[10][9][16], int16_t poly[1440]) {
 
 }
 
-void intt_10_x10(int16_t ntt[10][9][16], int16_t poly[1440]) {
+void intt_10_x10(int16_t ntt[10][9][16]) {
 
   for (int j = 0; j < 9; j++) {
     {
@@ -227,10 +227,8 @@ void intt_10_x10(int16_t ntt[10][9][16], int16_t poly[1440]) {
         }
         result_front[0] = vaddq_s16(tmp_front[0], tmp_front[1]);
         result_front[1] = vsubq_s16(tmp_front[0], tmp_front[1]);
-        // vst1q_s16(&ntt[2 * i1][j][0], result_front[0]);
-        // vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][0], result_front[1]);
-        vst1q_s16(&poly[((2 * i1) * 81 + 10 * j) % 90 * 16], result_front[0]);
-        vst1q_s16(&poly[((2 * i1 + 5) * 81 + 10 * j) % 90 * 16], result_front[1]);
+        vst1q_s16(&ntt[2 * i1][j][0], result_front[0]);
+        vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][0], result_front[1]);
         // std::cerr << i1 << ' ' << j << ": put to " << (((2 * i1) * 81 + 10 * j) % 90 * 16) << " and " << ((2 * i1 + 5) * 81 + 10 * j) % 90 * 16 << '\n';
       }
     }
@@ -289,10 +287,8 @@ void intt_10_x10(int16_t ntt[10][9][16], int16_t poly[1440]) {
         }
         result_back[0] = vaddq_s16(tmp_back[0], tmp_back[1]);
         result_back[1] = vsubq_s16(tmp_back[0], tmp_back[1]);
-        // vst1q_s16(&ntt[2 * i1][j][8], result_back[0]);
-        // vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][8], result_back[1]);
-        vst1q_s16(&poly[((2 * i1) * 81 + 10 * j) % 90 * 16 + 8], result_back[0]);
-        vst1q_s16(&poly[((2 * i1 + 5) * 81 + 10 * j) % 90 * 16 + 8], result_back[1]);
+        vst1q_s16(&ntt[2 * i1][j][8], result_back[0]);
+        vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][8], result_back[1]);
       }
     }
 
@@ -473,7 +469,7 @@ void ntt_9(int16_t ntt[10][9][16]) {
 
 }
 
-void intt_9_x9(int16_t ntt[10][9][16]) {
+void intt_9_x9(int16_t ntt[10][9][16], int16_t poly[1440]) {
 
   for (int i = 0; i < 10; i++) {
     // std::cerr << "ntt_9 input, i = " << i << '\n';
@@ -550,7 +546,7 @@ void intt_9_x9(int16_t ntt[10][9][16]) {
             result_front_high[j2] = vmlsq_n_s32(result_front_high[j2], esti, Q);
           }
           int16x8_t result_front = vuzp1q_s16(vreinterpretq_s16_s32(result_front_low[j2]), vreinterpretq_s16_s32(result_front_high[j2]));
-          vst1q_s16(&ntt[i][j1 + 3 * j2][0], result_front);
+          vst1q_s16(&poly[(i * 81 + (j1 + 3 * j2) * 10) % 90 * 16], result_front);
         }
       }
     }
@@ -620,7 +616,7 @@ void intt_9_x9(int16_t ntt[10][9][16]) {
             result_back_high[j2] = vmlsq_n_s32(result_back_high[j2], esti, Q);
           }
           int16x8_t result_back = vuzp1q_s16(vreinterpretq_s16_s32(result_back_low[j2]), vreinterpretq_s16_s32(result_back_high[j2]));
-          vst1q_s16(&ntt[i][j1 + 3 * j2][8], result_back);
+          vst1q_s16(&poly[(i * 81 + (j1 + 3 * j2) * 10) % 90 * 16 + 8], result_back);
         }
       }
     }
@@ -693,8 +689,8 @@ void div90_main(int16_t main_poly[1440]) {
   }
 }
 void backward(int16_t in_ntt[10][9][16], int16_t out_main[1440]) {
-  intt_9_x9(in_ntt);
-  intt_10_x10(in_ntt, out_main);
+  intt_10_x10(in_ntt);
+  intt_9_x9(in_ntt, out_main);
   div90_main(out_main);
   // for (int i = 0; i < 1440; i++) {
   //   int t = i >> 4;
