@@ -95,6 +95,12 @@ void barret_mla(int16x8_t &vd, int16x8_t v1, int16_t coef, int16_t bar) {
   vd = vmlsq_n_s16(vd, esti, Q);
 }
 
+// void barret_mls(int16x8_t &vd, int16x8_t v1, int16_t coef, int16_t bar) {
+//   int16x8_t esti = vqrdmulhq_n_s16(v1, bar);
+//   vd = vmlsq_n_s16(vd, v1, coef);
+//   vd = vmlaq_n_s16(vd, esti, Q);
+// }
+
 void ntt_10(int16_t ntt[10][9][16], int16_t poly[1440]) {
 
   for (int j = 0; j < 9; j++) {
@@ -178,47 +184,72 @@ void ntt_10(int16_t ntt[10][9][16], int16_t poly[1440]) {
 
 }
 
+constexpr int16_t W5_W5_4 = 502;
+constexpr int16_t W5_mW5_4 = 459;
+constexpr int16_t W5_2_W5_3 = -503;
+constexpr int16_t W5_2_mW5_3 = 868;
+constexpr int16_t W5_W5_2_mW5_3_mW_4 = 1327;
+
+constexpr int16_t INV2 = -2295;
+
 void intt_10_x10(int16_t ntt[10][9][16]) {
 
   for (int j = 0; j < 9; j++) {
+
+    // std::cerr << "intt_10_x10 input, j = " << j << '\n';
+    // for (int i = 0; i < 10; i++) {
+    //   std::cerr << "  i = " << i << '\n';
+    //   std::cerr << "    ";
+    //   for (int k = 0; k < 16; k++) {
+    //     std::cerr << ntt[i][j][k]  << " \n"[k == 15];
+    //   }
+    // }
+
     {
       int16x8_t tmp_front[5][2];
 
       for (int i2 = 0; i2 < 2; i2++) {
         int16x8_t f0_front = vld1q_s16(&ntt[5 * i2][j][0]);
-        tmp_front[0][i2] = f0_front;
-        tmp_front[1][i2] = f0_front;
-        tmp_front[2][i2] = f0_front;
-        tmp_front[3][i2] = f0_front;
-        tmp_front[4][i2] = f0_front;
-
         int16x8_t f1_front = vld1q_s16(&ntt[(5 * i2 + 4) % 10][j][0]);
-        tmp_front[0][i2] = vaddq_s16(tmp_front[0][i2], f1_front);
-        barret_mla(tmp_front[1][i2], f1_front, W_5S[1], W_5_BARS[1]);
-        barret_mla(tmp_front[2][i2], f1_front, W_5S[2], W_5_BARS[2]);
-        barret_mla(tmp_front[3][i2], f1_front, W_5S[3], W_5_BARS[3]);
-        barret_mla(tmp_front[4][i2], f1_front, W_5S[4], W_5_BARS[4]);
-
         int16x8_t f2_front = vld1q_s16(&ntt[(5 * i2 + 8) % 10][j][0]);
-        tmp_front[0][i2] = vaddq_s16(tmp_front[0][i2], f2_front);
-        barret_mla(tmp_front[1][i2], f2_front, W_5S[2], W_5_BARS[2]);
-        barret_mla(tmp_front[2][i2], f2_front, W_5S[4], W_5_BARS[4]);
-        barret_mla(tmp_front[3][i2], f2_front, W_5S[1], W_5_BARS[1]);
-        barret_mla(tmp_front[4][i2], f2_front, W_5S[3], W_5_BARS[3]);
-
         int16x8_t f3_front = vld1q_s16(&ntt[(5 * i2 + 2) % 10][j][0]);
-        tmp_front[0][i2] = vaddq_s16(tmp_front[0][i2], f3_front);
-        barret_mla(tmp_front[1][i2], f3_front, W_5S[3], W_5_BARS[3]);
-        barret_mla(tmp_front[2][i2], f3_front, W_5S[1], W_5_BARS[1]);
-        barret_mla(tmp_front[3][i2], f3_front, W_5S[4], W_5_BARS[4]);
-        barret_mla(tmp_front[4][i2], f3_front, W_5S[2], W_5_BARS[2]);
-
         int16x8_t f4_front = vld1q_s16(&ntt[(5 * i2 + 6) % 10][j][0]);
-        tmp_front[0][i2] = vaddq_s16(tmp_front[0][i2], f4_front);
-        barret_mla(tmp_front[1][i2], f4_front, W_5S[4], W_5_BARS[4]);
-        barret_mla(tmp_front[2][i2], f4_front, W_5S[3], W_5_BARS[3]);
-        barret_mla(tmp_front[3][i2], f4_front, W_5S[2], W_5_BARS[2]);
-        barret_mla(tmp_front[4][i2], f4_front, W_5S[1], W_5_BARS[1]);
+
+        int16x8_t f1_f4_front = vaddq_s16(f1_front, f4_front);
+        int16x8_t f1_mf4_front = vsubq_s16(f1_front, f4_front);
+
+        int16x8_t f3_f2_front = vaddq_s16(f3_front, f2_front);
+        int16x8_t f3_mf2_front = vsubq_s16(f3_front, f2_front);
+
+        int16x8_t f1_f2_f3_f4_front = vaddq_s16(f1_f4_front, f3_f2_front);
+        int16x8_t f1_mf2_f3_mf4_front = vaddq_s16(f1_mf4_front, f3_mf2_front);
+
+        tmp_front[0][i2] = vaddq_s16(f0_front, f1_f2_f3_f4_front);
+
+        int16x8_t neg_c0 = barret_mul(f1_f4_front, -W5_W5_4, gen_bar(-W5_W5_4));
+        barret_mla(neg_c0, f3_f2_front, -W5_2_W5_3, gen_bar(-W5_2_W5_3));
+        int16x8_t neg_c1 = vsubq_s16(f1_f2_f3_f4_front, neg_c0);
+
+        f1_mf4_front = barret_mul(f1_mf4_front, W5_mW5_4, gen_bar(W5_mW5_4));
+        f3_mf2_front = barret_mul(f3_mf2_front, W5_2_mW5_3, gen_bar(W5_2_mW5_3));
+        int16x8_t neg_n0 = vsubq_s16(f3_mf2_front, f1_mf4_front);
+        int16x8_t neg_n1 = vaddq_s16(f3_mf2_front, f1_mf4_front);
+        barret_mla(neg_n1, f1_mf2_f3_mf4_front, -W5_W5_2_mW5_3_mW_4, gen_bar(-W5_W5_2_mW5_3_mW_4));
+
+        tmp_front[1][i2] = vaddq_s16(neg_c0, neg_n0);
+        tmp_front[2][i2] = vaddq_s16(neg_c1, neg_n1);
+        tmp_front[4][i2] = vsubq_s16(neg_c0, neg_n0);
+        tmp_front[3][i2] = vsubq_s16(neg_c1, neg_n1);
+
+        tmp_front[1][i2] = barret_mul(tmp_front[1][i2], -INV2, gen_bar(-INV2));
+        tmp_front[2][i2] = barret_mul(tmp_front[2][i2], -INV2, gen_bar(-INV2));
+        tmp_front[3][i2] = barret_mul(tmp_front[3][i2], -INV2, gen_bar(-INV2));
+        tmp_front[4][i2] = barret_mul(tmp_front[4][i2], -INV2, gen_bar(-INV2));
+
+        tmp_front[1][i2] = vaddq_s16(tmp_front[1][i2], f0_front);
+        tmp_front[2][i2] = vaddq_s16(tmp_front[2][i2], f0_front);
+        tmp_front[3][i2] = vaddq_s16(tmp_front[3][i2], f0_front);
+        tmp_front[4][i2] = vaddq_s16(tmp_front[4][i2], f0_front);
       }
 
       for (int i1 = 0; i1 < 5; i1++) {
@@ -232,49 +263,55 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
 
       for (int i2 = 0; i2 < 2; i2++) {
         int16x8_t f0_back = vld1q_s16(&ntt[5 * i2][j][8]);
-        tmp_back[0][i2] = f0_back;
-        tmp_back[1][i2] = f0_back;
-        tmp_back[2][i2] = f0_back;
-        tmp_back[3][i2] = f0_back;
-        tmp_back[4][i2] = f0_back;
-
         int16x8_t f1_back = vld1q_s16(&ntt[(5 * i2 + 4) % 10][j][8]);
-        tmp_back[0][i2] = vaddq_s16(tmp_back[0][i2], f1_back);
-        barret_mla(tmp_back[1][i2], f1_back, W_5S[1], W_5_BARS[1]);
-        barret_mla(tmp_back[2][i2], f1_back, W_5S[2], W_5_BARS[2]);
-        barret_mla(tmp_back[3][i2], f1_back, W_5S[3], W_5_BARS[3]);
-        barret_mla(tmp_back[4][i2], f1_back, W_5S[4], W_5_BARS[4]);
-
         int16x8_t f2_back = vld1q_s16(&ntt[(5 * i2 + 8) % 10][j][8]);
-        tmp_back[0][i2] = vaddq_s16(tmp_back[0][i2], f2_back);
-        barret_mla(tmp_back[1][i2], f2_back, W_5S[2], W_5_BARS[2]);
-        barret_mla(tmp_back[2][i2], f2_back, W_5S[4], W_5_BARS[4]);
-        barret_mla(tmp_back[3][i2], f2_back, W_5S[1], W_5_BARS[1]);
-        barret_mla(tmp_back[4][i2], f2_back, W_5S[3], W_5_BARS[3]);
-
         int16x8_t f3_back = vld1q_s16(&ntt[(5 * i2 + 2) % 10][j][8]);
-        tmp_back[0][i2] = vaddq_s16(tmp_back[0][i2], f3_back);
-        barret_mla(tmp_back[1][i2], f3_back, W_5S[3], W_5_BARS[3]);
-        barret_mla(tmp_back[2][i2], f3_back, W_5S[1], W_5_BARS[1]);
-        barret_mla(tmp_back[3][i2], f3_back, W_5S[4], W_5_BARS[4]);
-        barret_mla(tmp_back[4][i2], f3_back, W_5S[2], W_5_BARS[2]);
-
         int16x8_t f4_back = vld1q_s16(&ntt[(5 * i2 + 6) % 10][j][8]);
-        tmp_back[0][i2] = vaddq_s16(tmp_back[0][i2], f4_back);
-        barret_mla(tmp_back[1][i2], f4_back, W_5S[4], W_5_BARS[4]);
-        barret_mla(tmp_back[2][i2], f4_back, W_5S[3], W_5_BARS[3]);
-        barret_mla(tmp_back[3][i2], f4_back, W_5S[2], W_5_BARS[2]);
-        barret_mla(tmp_back[4][i2], f4_back, W_5S[1], W_5_BARS[1]);
+
+        int16x8_t f1_f4_back = vaddq_s16(f1_back, f4_back);
+        int16x8_t f1_mf4_back = vsubq_s16(f1_back, f4_back);
+
+        int16x8_t f3_f2_back = vaddq_s16(f3_back, f2_back);
+        int16x8_t f3_mf2_back = vsubq_s16(f3_back, f2_back);
+
+        int16x8_t f1_f2_f3_f4_back = vaddq_s16(f1_f4_back, f3_f2_back);
+        int16x8_t f1_mf2_f3_mf4_back = vaddq_s16(f1_mf4_back, f3_mf2_back);
+
+        tmp_back[0][i2] = vaddq_s16(f0_back, f1_f2_f3_f4_back);
+
+        int16x8_t neg_c0 = barret_mul(f1_f4_back, -W5_W5_4, gen_bar(-W5_W5_4));
+        barret_mla(neg_c0, f3_f2_back, -W5_2_W5_3, gen_bar(-W5_2_W5_3));
+        int16x8_t neg_c1 = vsubq_s16(f1_f2_f3_f4_back, neg_c0);
+
+        f1_mf4_back = barret_mul(f1_mf4_back, W5_mW5_4, gen_bar(W5_mW5_4));
+        f3_mf2_back = barret_mul(f3_mf2_back, W5_2_mW5_3, gen_bar(W5_2_mW5_3));
+        int16x8_t neg_n0 = vsubq_s16(f3_mf2_back, f1_mf4_back);
+        int16x8_t neg_n1 = vaddq_s16(f3_mf2_back, f1_mf4_back);
+        barret_mla(neg_n1, f1_mf2_f3_mf4_back, -W5_W5_2_mW5_3_mW_4, gen_bar(-W5_W5_2_mW5_3_mW_4));
+
+        tmp_back[1][i2] = vaddq_s16(neg_c0, neg_n0);
+        tmp_back[2][i2] = vaddq_s16(neg_c1, neg_n1);
+        tmp_back[4][i2] = vsubq_s16(neg_c0, neg_n0);
+        tmp_back[3][i2] = vsubq_s16(neg_c1, neg_n1);
+
+        tmp_back[1][i2] = barret_mul(tmp_back[1][i2], -INV2, gen_bar(-INV2));
+        tmp_back[2][i2] = barret_mul(tmp_back[2][i2], -INV2, gen_bar(-INV2));
+        tmp_back[3][i2] = barret_mul(tmp_back[3][i2], -INV2, gen_bar(-INV2));
+        tmp_back[4][i2] = barret_mul(tmp_back[4][i2], -INV2, gen_bar(-INV2));
+
+        tmp_back[1][i2] = vaddq_s16(tmp_back[1][i2], f0_back);
+        tmp_back[2][i2] = vaddq_s16(tmp_back[2][i2], f0_back);
+        tmp_back[3][i2] = vaddq_s16(tmp_back[3][i2], f0_back);
+        tmp_back[4][i2] = vaddq_s16(tmp_back[4][i2], f0_back);
       }
 
       for (int i1 = 0; i1 < 5; i1++) {
         vst1q_s16(&ntt[2 * i1][j][8], vaddq_s16(tmp_back[i1][0], tmp_back[i1][1]));
         vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][8], vsubq_s16(tmp_back[i1][0], tmp_back[i1][1]));
-        // std::cerr << i1 << ' ' << j << ": put to " << (((2 * i1) * 81 + 10 * j) % 90 * 16) << " and " << ((2 * i1 + 5) * 81 + 10 * j) % 90 * 16 << '\n';
       }
     }
 
-    // std::cerr << "intt_10_x10, j = " << j << '\n';
+    // std::cerr << "intt_10_x10 output, j = " << j << '\n';
     // for (int i = 0; i < 10; i++) {
     //   std::cerr << "  i = " << i << '\n';
     //   std::cerr << "    ";
@@ -622,7 +659,7 @@ void mult(int16_t in1_poly[], int16_t in2_poly[], int16_t out_poly[]) {
   base_mul(in1_ntt, in2_ntt, out_ntt);
   backward(out_ntt, out_main);
   // for (int i = 0; i < 1440; i++) {
-  //   std::cout << out_main[i] << " \n"[i == 1439];
+  //   std::cerr << out_main[i] << " \n"[i == 1439];
   // }
   crt(out_poly, out_main, out_low);
   center_poly(out_poly);
