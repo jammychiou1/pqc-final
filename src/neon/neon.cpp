@@ -581,25 +581,28 @@ void crt(int16_t poly[], int16_t main_poly[], int16_t low[]) {
 
 // poly length must >= 768
 void center_poly(int16_t poly[]) {
-  int16x8_t zeros = vdupq_n_s16(0);
-  for (int i = 0; i < 768; i += 8) {
-    int16x8_t chunk = vld1q_s16(&poly[i]);
-    // debug_int16x8(chunk);
-    int32x4_t wide_low = vmovl_s16(vget_low_s16(chunk));
-    int32x4_t wide_high = vmovl_high_s16(chunk);
-    // debug_int32x4(wide_low);
-    // debug_int32x4(wide_high);
+  int16x8_t qs = vdupq_n_s16(Q);
+  int16x8_t half_qs = vdupq_n_s16((Q - 1) / 2);
+  int16x8_t neg_half_qs = vdupq_n_s16(-(Q - 1) / 2);
+  for (int i = 0; i < 768; i += 8 * 4) {
+    int16x8x4_t chunks = vld1q_s16_x4(&poly[i]);
 
-    int32x4_t esti;
+    barret_reduce(chunks.val[0]);
+    barret_reduce(chunks.val[1]);
+    barret_reduce(chunks.val[2]);
+    barret_reduce(chunks.val[3]);
 
-    esti = vqrdmulhq_n_s32(wide_low, BARRET_Q);
-    wide_low = vmlsq_n_s32(wide_low, esti, Q);
+    chunks.val[0] = vsubq_s16(chunks.val[0], vandq_s16(vreinterpretq_s16_u16(vcgtq_s16(chunks.val[0], half_qs)), qs));
+    chunks.val[1] = vsubq_s16(chunks.val[1], vandq_s16(vreinterpretq_s16_u16(vcgtq_s16(chunks.val[1], half_qs)), qs));
+    chunks.val[2] = vsubq_s16(chunks.val[2], vandq_s16(vreinterpretq_s16_u16(vcgtq_s16(chunks.val[2], half_qs)), qs));
+    chunks.val[3] = vsubq_s16(chunks.val[3], vandq_s16(vreinterpretq_s16_u16(vcgtq_s16(chunks.val[3], half_qs)), qs));
 
-    esti = vqrdmulhq_n_s32(wide_high, BARRET_Q);
-    wide_high = vmlsq_n_s32(wide_high, esti, Q);
+    chunks.val[0] = vaddq_s16(chunks.val[0], vandq_s16(vreinterpretq_s16_u16(vcltq_s16(chunks.val[0], neg_half_qs)), qs));
+    chunks.val[1] = vaddq_s16(chunks.val[1], vandq_s16(vreinterpretq_s16_u16(vcltq_s16(chunks.val[1], neg_half_qs)), qs));
+    chunks.val[2] = vaddq_s16(chunks.val[2], vandq_s16(vreinterpretq_s16_u16(vcltq_s16(chunks.val[2], neg_half_qs)), qs));
+    chunks.val[3] = vaddq_s16(chunks.val[3], vandq_s16(vreinterpretq_s16_u16(vcltq_s16(chunks.val[3], neg_half_qs)), qs));
 
-    chunk = vuzp1q_s16(vreinterpretq_s16_s32(wide_low), vreinterpretq_s16_s32(wide_high));
-    vst1q_s16(&poly[i], chunk);
+    vst1q_s16_x4(&poly[i], chunks);
   }
 }
 
