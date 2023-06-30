@@ -1,7 +1,9 @@
 #ifndef PRETTY_H
 #define PRETTY_H
 
-#include "mult.h"
+#include <iostream>
+
+#include "sntrup761.h"
 
 inline void scan_poly(int16_t poly[]) {
   for (int i = 0; i < P; i++) {

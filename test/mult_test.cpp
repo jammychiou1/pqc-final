@@ -1,8 +1,8 @@
-#include <iostream>
 #include <cstring>
 
-#include "mult.h"
-#include "pretty.h"
+#include "utils/pretty.h"
+
+void mult(int16_t in1_poly[], int16_t in2_poly[], int16_t out_poly[]);
 
 int main() {
   int16_t a[768], b[768], c[768];
