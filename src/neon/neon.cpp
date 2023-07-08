@@ -12,6 +12,7 @@
 #include "neon/ntt_9.h"
 #include "neon/intt_9_x9.h"
 #include "neon/base_mul.h"
+#include "neon/mult_low.h"
 
 void forward(int16_t in_poly[], int16_t out_ntt[10][9][16]) {
   ntt_10(out_ntt, in_poly);
@@ -33,15 +34,6 @@ void backward(int16_t in_ntt[10][9][16], int16_t out_main[1440]) {
   intt_10_x10(in_ntt);
   intt_9_x9(in_ntt, out_main);
   div90_main(out_main);
-}
-
-void mult_low(int16_t in1_low[81], int16_t in2_low[81], int16_t out_low[81]) {
-  std::memset(out_low, 0, sizeof(int16_t[81]));
-  for (int i = 0; i < 81; i++) {
-    for (int j = 0; i + j < 81; j++) {
-      out_low[i + j] = center_lift<int64_t, Q>(out_low[i + j] + int64_t(1) * in1_low[i] * in2_low[j]);
-    }
-  }
 }
 
 // main_poly length must >= 1448
