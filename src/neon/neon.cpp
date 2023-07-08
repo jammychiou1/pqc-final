@@ -115,7 +115,7 @@ void mult(int16_t in1_poly[], int16_t in2_poly[], int16_t out_poly[]) {
   int16_t in1_ntt[10][9][16];
   int16_t in2_ntt[10][9][16];
   int16_t out_ntt[10][9][16];
-  int16_t out_low[81];
+  int16_t out_low[96];
   int16_t out_main[1448];
 
   forward(in1_poly, in1_ntt);

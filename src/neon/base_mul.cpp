@@ -107,11 +107,6 @@ void base_mul(int16_t in1_ntt[10][9][16], int16_t in2_ntt[10][9][16], int16_t ou
       base_mul_col<7>(res_front_low, res_front_high, res_back_low, res_back_high,
           vextq_s16(twiddle_in2_front, twiddle_in2_back, 1), vextq_s16(twiddle_in2_back, in2_front, 1), in1_back);
 
-      // debug_int32x4(res_front_low);
-      // debug_int32x4(res_front_high);
-      // debug_int32x4(res_back_low);
-      // debug_int32x4(res_back_high);
-
       int32x4_t esti;
       esti = vqrdmulhq_n_s32(res_front_low, 467759);
       res_front_low = vmlsq_n_s32(res_front_low, esti, Q);
