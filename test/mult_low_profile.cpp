@@ -12,8 +12,8 @@ int main() {
     low_b[i] = rand() % 4591 - 2295;
   }
   for (int t = 0; t < 1000000; t++) {
-    low_a[0] = rand() % 4591 - 2295;
-    low_b[0] = rand() % 4591 - 2295;
+    // low_a[0] = rand() % 4591 - 2295;
+    // low_b[0] = rand() % 4591 - 2295;
     mult_low(low_a, low_b, low_c);
   }
 }
