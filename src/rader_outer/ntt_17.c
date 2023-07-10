@@ -35,9 +35,9 @@ static int16_t twiddle_permutedx8[17][8] = {
     {-1145, -1145, -1145, -1145, -1145, -1145, -1145, -1145}
 };
 
-void __asm_rader_17_mix_pre(int16_t*, int16_t*, int16_t*, int16_t(*)[8]);
+void __asm_rader_17_mix_pre(int16_t*, const int16_t*, int16_t*, int16_t(*)[8]);
 
-void ntt_17(int16_t ntt[1632], int16_t poly[1632]) {
+void ntt_17(int16_t ntt[1632], const int16_t poly[1632]) {
   for (int i = 0; i < 12; i++) {
     __asm_rader_17_mix_pre(ntt + i * 8, poly, in_table[i], twiddle_permutedx8);
   }

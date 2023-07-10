@@ -543,11 +543,12 @@ void low_intt_10(int16_t ntt[10][16], int16_t low[96]) {
   // }
 }
 
-int16_t in1_low_ntt[10][16];
-int16_t in2_low_ntt[10][16];
-int16_t out_low_ntt[10][16];
-
 void mult_low(const int16_t in1_low[96], const int16_t in2_low[96], int16_t out_low[96]) {
+
+  static int16_t in1_low_ntt[10][16];
+  static int16_t in2_low_ntt[10][16];
+  static int16_t out_low_ntt[10][16];
+
   // int16_t out_low_ref[81];
   // for (int i = 0; i < 81; i++) {
   //   for (int j = 0; i + j < 81; j++) {

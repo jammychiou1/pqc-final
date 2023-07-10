@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-void polymul(int16_t *des, int16_t *src1, int16_t *src2);
+void polymul(int16_t *des, const int16_t *src1, const int16_t *src2);
 
 #endif // POLYMUL_H

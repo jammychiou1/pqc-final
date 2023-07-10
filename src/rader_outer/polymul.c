@@ -61,7 +61,7 @@ void Rq_reduce(int16_t *h, int16_t *fg) {
 
 static int16_t poly1_NTT[51 * 32], poly2_NTT[51 * 32];
 static int16_t out_tmp[1632] = {};
-void polymul(int16_t *des, int16_t *src1, int16_t *src2) {
+void polymul(int16_t *des, const int16_t *src1, const int16_t *src2) {
     int16_t *res_NTT = poly1_NTT;
 
     ntt_17(poly1_NTT, src1);
