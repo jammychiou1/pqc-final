@@ -17,7 +17,7 @@ constexpr int16_t W_5 = gen_pow<int16_t, Q>(W_4590, ORD / 5);
 constexpr std::array<int16_t, 17> W_5S = gen_pows<int16_t, 17, Q>(W_5);
 constexpr std::array<int16_t, 17> W_5_BARS = gen_bars<int16_t, 17, Q>(W_5S);
 
-void ntt_10(int16_t ntt[10][9][16], int16_t poly[1440]) {
+void ntt_10(int16_t ntt[10][9][16], const int16_t poly[1440]) {
 
   for (int j = 0; j < 9; j++) {
     // std::cerr << "ntt_10 input, j = " << j << '\n';

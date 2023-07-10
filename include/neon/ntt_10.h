@@ -3,6 +3,6 @@
 
 #include <cstdint>
 
-void ntt_10(int16_t ntt[10][9][16], int16_t poly[1440]);
+void ntt_10(int16_t ntt[10][9][16], const int16_t poly[1440]);
 
 #endif // NTT_10_H

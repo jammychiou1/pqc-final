@@ -1,6 +1,6 @@
 #include <cstdlib>
 
-void intt_9_x9(int16_t ntt[10][9][16], int16_t poly[1440]);
+#include "neon/intt_9_x9.h"
 
 int16_t ntt[10][9][16];
 int16_t poly[1400];

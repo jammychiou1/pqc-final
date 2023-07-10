@@ -1,6 +1,6 @@
 #include <cstdlib>
 
-void ntt_9(int16_t ntt[10][9][16]);
+#include "neon/ntt_9.h"
 
 int16_t ntt[10][9][16];
 int main() {

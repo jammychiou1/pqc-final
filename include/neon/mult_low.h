@@ -3,6 +3,6 @@
 
 #include <cstdint>
 
-void mult_low(int16_t in1_low[81], int16_t in2_low[81], int16_t out_low[81]);
+void mult_low(const int16_t in1_low[81], const int16_t in2_low[81], int16_t out_low[81]);
 
 #endif // MULT_LOW_H

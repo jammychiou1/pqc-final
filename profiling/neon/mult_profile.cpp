@@ -1,7 +1,7 @@
 #include <cstring>
 #include <cstdlib>
 
-void mult(int16_t in1_poly[], int16_t in2_poly[], int16_t out_poly[]);
+#include "neon/neon.h"
 
 int main() {
   int16_t a[768], b[768], c[768];

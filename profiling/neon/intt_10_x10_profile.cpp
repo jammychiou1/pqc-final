@@ -1,6 +1,6 @@
 #include <cstdlib>
 
-void intt_10_x10(int16_t ntt[10][9][16]);
+#include "neon/intt_10_x10.h"
 
 int16_t ntt[10][9][16];
 int main() {

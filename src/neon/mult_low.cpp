@@ -20,7 +20,7 @@ constexpr int16_t K5 = 1327; // W_5 + W_5^2 - W_5^3 - W_5^4
 constexpr int16_t INV2 = -2295;
 constexpr int16_t INV10 = -459;
 
-void low_ntt_10(int16_t ntt[10][16], int16_t low[96]) {
+void low_ntt_10(int16_t ntt[10][16], const int16_t low[96]) {
   {
     int16x8_t x0_fr = vld1q_s16(&low[0]);
     int16x8_t x1_fr = vld1q_s16(&low[16]);
@@ -547,7 +547,7 @@ int16_t in1_low_ntt[10][16];
 int16_t in2_low_ntt[10][16];
 int16_t out_low_ntt[10][16];
 
-void mult_low(int16_t in1_low[96], int16_t in2_low[96], int16_t out_low[96]) {
+void mult_low(const int16_t in1_low[96], const int16_t in2_low[96], int16_t out_low[96]) {
   // int16_t out_low_ref[81];
   // for (int i = 0; i < 81; i++) {
   //   for (int j = 0; i + j < 81; j++) {

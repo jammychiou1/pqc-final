@@ -1,3 +1,5 @@
+#include "neon/neon.h"
+
 #include <arm_neon.h>
 #include <cstring>
 #include <iostream>
@@ -14,7 +16,7 @@
 #include "neon/base_mul.h"
 #include "neon/mult_low.h"
 
-void forward(int16_t in_poly[], int16_t out_ntt[10][9][16]) {
+void forward(const int16_t in_poly[], int16_t out_ntt[10][9][16]) {
   ntt_10(out_ntt, in_poly);
   ntt_9(out_ntt);
 }
@@ -111,7 +113,7 @@ void center_poly(int16_t poly[]) {
 // inx_poly length must >= 768
 // inx_poly[761 : 768] filled with zero
 // out_poly length must >= 768
-void mult(int16_t in1_poly[], int16_t in2_poly[], int16_t out_poly[]) {
+void mult(const int16_t in1_poly[], const int16_t in2_poly[], int16_t out_poly[]) {
   int16_t in1_ntt[10][9][16];
   int16_t in2_ntt[10][9][16];
   int16_t out_ntt[10][9][16];
