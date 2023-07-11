@@ -12,11 +12,7 @@
 
 constexpr int ORD = 4590;
 constexpr int16_t W_4590 = 11;
-constexpr int16_t W_5 = gen_pow<int16_t, Q>(W_4590, ORD / 5);
 constexpr int16_t W_10 = gen_pow<int16_t, Q>(W_4590, ORD / 10);
-
-constexpr std::array<int16_t, 17> W_5S = gen_pows<int16_t, 17, Q>(W_5);
-constexpr std::array<int16_t, 17> W_5_BARS = gen_bars<int16_t, 17, Q>(W_5S);
 
 constexpr std::array<int16_t, 10> W_10S = gen_pows<int16_t, 10, Q>(W_10);
 constexpr std::array<int16_t, 10> W_10_BARS = gen_bars<int16_t, 10, Q>(W_10S);
