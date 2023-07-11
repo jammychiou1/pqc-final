@@ -41,12 +41,12 @@ void ntt_9(int16_t ntt[10][9][16]) {
       int16x8_t f2_front = vld1q_s16(&ntt[i][6 + j2][0]);
       int16x8_t f2_back = vld1q_s16(&ntt[i][6 + j2][8]);
 
-      barret_reduce<Q>(f0_front);
-      barret_reduce<Q>(f0_back);
-      barret_reduce<Q>(f1_front);
-      barret_reduce<Q>(f1_back);
-      barret_reduce<Q>(f2_front);
-      barret_reduce<Q>(f2_back);
+      // barret_reduce<Q>(f0_front);
+      // barret_reduce<Q>(f0_back);
+      // barret_reduce<Q>(f1_front);
+      // barret_reduce<Q>(f1_back);
+      // barret_reduce<Q>(f2_front);
+      // barret_reduce<Q>(f2_back);
 
       int16x8_t f1_f2_front = vaddq_s16(f1_front, f2_front);
       int16x8_t f1_f2_back = vaddq_s16(f1_back, f2_back);
