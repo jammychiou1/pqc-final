@@ -32,10 +32,21 @@ void div90_main(int16_t main_poly[1440]) {
   }
 }
 
+constexpr int16_t INV360 = 1135;
+constexpr int16_t INV360_BAR = gen_bar<int16_t, Q>(INV360);
+void div360_main(int16_t main_poly[1440]) {
+  int16x8_t zeros = vdupq_n_s16(0);
+  for (int i = 0; i < 1440; i += 8) {
+    int16x8_t chunk = vld1q_s16(&main_poly[i]);
+    chunk = barret_mul_const<Q, INV360>(chunk);
+    vst1q_s16(&main_poly[i], chunk);
+  }
+}
+
 void backward(int16_t in_ntt[10][9][16], int16_t out_main[1440]) {
   intt_10_x10(in_ntt);
   intt_9_x9(in_ntt, out_main);
-  div90_main(out_main);
+  div360_main(out_main);
 }
 
 // main_poly length must >= 1448
