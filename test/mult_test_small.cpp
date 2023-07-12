@@ -1,10 +1,12 @@
 #include <iostream>
 
 #include "neon/neon.h"
-#include "utils/pretty.h"
+
+int16_t a[800];
+int16_t b[800];
+int16_t c[768];
 
 int main() {
-  int16_t a[768] = {}, b[768] = {}, c[768];
   int n;
   std::cin >> n;
   for (int i = 0; i <= n; i++) {
