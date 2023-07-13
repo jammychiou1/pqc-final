@@ -425,12 +425,12 @@ void low_intt_10(int16_t ntt[10][16], int16_t low[96]) {
     // x4_fr = barret_mul_const<Q, INV10>(x4_fr);
     // x5_fr = barret_mul_const<Q, INV10>(x5_fr);
 
-    x0_fr = barret_mul_const<Q, 36>(x0_fr);
-    x1_fr = barret_mul_const<Q, 36>(x1_fr);
-    x2_fr = barret_mul_const<Q, 36>(x2_fr);
-    x3_fr = barret_mul_const<Q, 36>(x3_fr);
-    x4_fr = barret_mul_const<Q, 36>(x4_fr);
-    x5_fr = barret_mul_const<Q, 36>(x5_fr);
+    x0_fr = barret_mul_const<Q, -72>(x0_fr);
+    x1_fr = barret_mul_const<Q, -72>(x1_fr);
+    x2_fr = barret_mul_const<Q, -72>(x2_fr);
+    x3_fr = barret_mul_const<Q, -72>(x3_fr);
+    x4_fr = barret_mul_const<Q, -72>(x4_fr);
+    x5_fr = barret_mul_const<Q, -72>(x5_fr);
 
     vst1q_s16(&low[0], x0_fr);
     vst1q_s16(&low[16], x1_fr);
@@ -533,12 +533,12 @@ void low_intt_10(int16_t ntt[10][16], int16_t low[96]) {
     // x4_bk = barret_mul_const<Q, INV10>(x4_bk);
     // // x5_bk = barret_mul_const<Q, INV10>(x5_bk);
 
-    x0_bk = barret_mul_const<Q, 36>(x0_bk);
-    x1_bk = barret_mul_const<Q, 36>(x1_bk);
-    x2_bk = barret_mul_const<Q, 36>(x2_bk);
-    x3_bk = barret_mul_const<Q, 36>(x3_bk);
-    x4_bk = barret_mul_const<Q, 36>(x4_bk);
-    // x5_bk = barret_mul_const<Q, 36>(x5_bk);
+    x0_bk = barret_mul_const<Q, -72>(x0_bk);
+    x1_bk = barret_mul_const<Q, -72>(x1_bk);
+    x2_bk = barret_mul_const<Q, -72>(x2_bk);
+    x3_bk = barret_mul_const<Q, -72>(x3_bk);
+    x4_bk = barret_mul_const<Q, -72>(x4_bk);
+    // x5_bk = barret_mul_const<Q, -72>(x5_bk);
 
     vst1q_s16(&low[8], x0_bk);
     vst1q_s16(&low[24], x1_bk);
@@ -576,7 +576,7 @@ void mult_low(const int16_t in1_low[96], const int16_t in2_low[96], int16_t out_
   low_base_mul(in1_low_ntt, in2_low_ntt, out_low_ntt);
   low_intt_10(out_low_ntt, out_low);
   // out_low[80] += diff - int16_t((diff * int64_t(467759) + (int64_t(1) << 30)) >> 31) * Q;
-  out_low[80] = center_lift<int64_t, Q>(out_low[80] + 360 * (int64_t(in1_low[0]) * in2_low[80] + int64_t(in1_low[80]) * in2_low[0]));
+  out_low[80] = center_lift<int64_t, Q>(out_low[80] - 720 * (int64_t(in1_low[0]) * in2_low[80] + int64_t(in1_low[80]) * in2_low[0]));
 
   // for (int i = 0; i < 81; i++) {
   //   std::cerr << out_low[i] << " \n"[i == 80];

@@ -57,10 +57,12 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
         int16x8_t f1_mf2_f3_mf4_front = vaddq_s16(f1_mf4_front, f3_mf2_front);
 
         tmp_front[0][i2] = vaddq_s16(f0_front, f1_f2_f3_f4_front);
+        tmp_front[0][i2] = barret_mul_const<Q, -2>(tmp_front[0][i2]);
 
         int16x8_t neg_c0 = barret_mul_const<Q, -W5_W5_4>(f1_f4_front);
         barret_mla_const<Q, -W5_2_W5_3>(neg_c0, f3_f2_front);
         int16x8_t neg_c1 = vsubq_s16(f1_f2_f3_f4_front, neg_c0);
+        barret_reduce<Q>(neg_c1);
 
         f1_mf4_front = barret_mul_const<Q, W5_mW5_4>(f1_mf4_front);
         f3_mf2_front = barret_mul_const<Q, W5_2_mW5_3>(f3_mf2_front);
@@ -73,15 +75,12 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
         tmp_front[4][i2] = vsubq_s16(neg_c0, neg_n0);
         tmp_front[3][i2] = vsubq_s16(neg_c1, neg_n1);
 
-        tmp_front[1][i2] = barret_mul_const<Q, -INV2>(tmp_front[1][i2]);
-        tmp_front[2][i2] = barret_mul_const<Q, -INV2>(tmp_front[2][i2]);
-        tmp_front[3][i2] = barret_mul_const<Q, -INV2>(tmp_front[3][i2]);
-        tmp_front[4][i2] = barret_mul_const<Q, -INV2>(tmp_front[4][i2]);
+        int16x8_t df0_front = vshlq_n_s16(f0_front, 1);
 
-        tmp_front[1][i2] = vaddq_s16(tmp_front[1][i2], f0_front);
-        tmp_front[2][i2] = vaddq_s16(tmp_front[2][i2], f0_front);
-        tmp_front[3][i2] = vaddq_s16(tmp_front[3][i2], f0_front);
-        tmp_front[4][i2] = vaddq_s16(tmp_front[4][i2], f0_front);
+        tmp_front[1][i2] = vsubq_s16(tmp_front[1][i2], df0_front);
+        tmp_front[2][i2] = vsubq_s16(tmp_front[2][i2], df0_front);
+        tmp_front[3][i2] = vsubq_s16(tmp_front[3][i2], df0_front);
+        tmp_front[4][i2] = vsubq_s16(tmp_front[4][i2], df0_front);
       }
 
       for (int i1 = 0; i1 < 5; i1++) {
@@ -110,10 +109,12 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
         int16x8_t f1_mf2_f3_mf4_back = vaddq_s16(f1_mf4_back, f3_mf2_back);
 
         tmp_back[0][i2] = vaddq_s16(f0_back, f1_f2_f3_f4_back);
+        tmp_back[0][i2] = barret_mul_const<Q, -2>(tmp_back[0][i2]);
 
         int16x8_t neg_c0 = barret_mul_const<Q, -W5_W5_4>(f1_f4_back);
         barret_mla_const<Q, -W5_2_W5_3>(neg_c0, f3_f2_back);
         int16x8_t neg_c1 = vsubq_s16(f1_f2_f3_f4_back, neg_c0);
+        barret_reduce<Q>(neg_c1);
 
         f1_mf4_back = barret_mul_const<Q, W5_mW5_4>(f1_mf4_back);
         f3_mf2_back = barret_mul_const<Q, W5_2_mW5_3>(f3_mf2_back);
@@ -126,15 +127,12 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
         tmp_back[4][i2] = vsubq_s16(neg_c0, neg_n0);
         tmp_back[3][i2] = vsubq_s16(neg_c1, neg_n1);
 
-        tmp_back[1][i2] = barret_mul_const<Q, -INV2>(tmp_back[1][i2]);
-        tmp_back[2][i2] = barret_mul_const<Q, -INV2>(tmp_back[2][i2]);
-        tmp_back[3][i2] = barret_mul_const<Q, -INV2>(tmp_back[3][i2]);
-        tmp_back[4][i2] = barret_mul_const<Q, -INV2>(tmp_back[4][i2]);
+        int16x8_t df0_back = vshlq_n_s16(f0_back, 1);
 
-        tmp_back[1][i2] = vaddq_s16(tmp_back[1][i2], f0_back);
-        tmp_back[2][i2] = vaddq_s16(tmp_back[2][i2], f0_back);
-        tmp_back[3][i2] = vaddq_s16(tmp_back[3][i2], f0_back);
-        tmp_back[4][i2] = vaddq_s16(tmp_back[4][i2], f0_back);
+        tmp_back[1][i2] = vsubq_s16(tmp_back[1][i2], df0_back);
+        tmp_back[2][i2] = vsubq_s16(tmp_back[2][i2], df0_back);
+        tmp_back[3][i2] = vsubq_s16(tmp_back[3][i2], df0_back);
+        tmp_back[4][i2] = vsubq_s16(tmp_back[4][i2], df0_back);
       }
 
       for (int i1 = 0; i1 < 5; i1++) {
