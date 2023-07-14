@@ -1,4 +1,4 @@
-set(PROFILES ntt_10_profile ntt_9_profile forward_profile intt_10_x10_profile intt_9_x9_profile crt_profile center_poly_profile div90_profile base_mul_profile mult_low_profile mult_profile)
+set(PROFILES ntt_10_profile ntt_9_profile forward_profile intt_10_x10_profile intt_9_x9_profile crt_profile center_poly_profile div90_profile base_mul_profile mult_low_profile mult_profile mult_once)
 
 foreach(X IN LISTS PROFILES)
   add_executable("${X}" "${X}.cpp")
