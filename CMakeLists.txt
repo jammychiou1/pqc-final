@@ -10,7 +10,7 @@ endif()
 
 option(DEBINFO "enable debug info")
 
-if(OPTIMIZE)
+if(DEBINFO)
     add_compile_options(-g)
 endif()
 
