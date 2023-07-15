@@ -14,6 +14,8 @@ if(DEBINFO)
     add_compile_options(-g)
 endif()
 
+option(IPO "check then enable IPO")
+
 if(IPO)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT supported OUTPUT error)
