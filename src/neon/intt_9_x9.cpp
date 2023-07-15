@@ -3,12 +3,10 @@
 #include <arm_neon.h>
 #include <array>
 #include <cstdint>
-#include <iostream>
 
 #include "sntrup761.h"
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
-#include "utils/debug.h"
 
 constexpr int ORD = 4590;
 constexpr int16_t W_4590 = 11;
@@ -67,15 +65,6 @@ inline void btrfly9(
 void intt_9_x9(int16_t ntt[10][9][16], int16_t poly[1440]) {
 
   for (int i = 0; i < 10; i++) {
-    // std::cerr << "intt_9 input, i = " << i << '\n';
-    // for (int j = 0; j < 9; j++) {
-    //   std::cerr << "  j = " << j << '\n';
-    //   std::cerr << "    ";
-    //   for (int k = 0; k < 16; k++) {
-    //     std::cerr << ntt[i][j][k]  << " \n"[k == 15];
-    //   }
-    // }
-
     {
       int16x8_t x0_fr = vld1q_s16(&ntt[i][0][0]);
       int16x8_t x1_fr = vld1q_s16(&ntt[i][8][0]);
@@ -97,34 +86,12 @@ void intt_9_x9(int16_t ntt[10][9][16], int16_t poly[1440]) {
       barret_reduce<Q>(x7_fr);
       barret_reduce<Q>(x8_fr);
 
-      // std::cerr << "xi_fr:\n";
-      // debug_int16x8(x0_fr);
-      // debug_int16x8(x1_fr);
-      // debug_int16x8(x2_fr);
-      // debug_int16x8(x3_fr);
-      // debug_int16x8(x4_fr);
-      // debug_int16x8(x5_fr);
-      // debug_int16x8(x6_fr);
-      // debug_int16x8(x7_fr);
-      // debug_int16x8(x8_fr);
-
       int16x8_t h0_fr, h1_fr, h2_fr, h3_fr, h4_fr, h5_fr, h6_fr, h7_fr, h8_fr;
 
       btrfly9(x0_fr, x1_fr, x2_fr, x3_fr, x4_fr,
           x5_fr, x6_fr, x7_fr, x8_fr,
           h0_fr, h1_fr, h2_fr, h3_fr, h4_fr,
           h5_fr, h6_fr, h7_fr, h8_fr);
-
-      // std::cerr << "hi_fr:\n";
-      // debug_int16x8(h0_fr);
-      // debug_int16x8(h1_fr);
-      // debug_int16x8(h2_fr);
-      // debug_int16x8(h3_fr);
-      // debug_int16x8(h4_fr);
-      // debug_int16x8(h5_fr);
-      // debug_int16x8(h6_fr);
-      // debug_int16x8(h7_fr);
-      // debug_int16x8(h8_fr);
 
       vst1q_s16(&poly[81 * i % 90 * 16], h0_fr);
       vst1q_s16(&poly[(81 * i + 10) % 90 * 16], h1_fr);
@@ -175,15 +142,6 @@ void intt_9_x9(int16_t ntt[10][9][16], int16_t poly[1440]) {
       vst1q_s16(&poly[(81 * i + 70) % 90 * 16 + 8], h7_bk);
       vst1q_s16(&poly[(81 * i + 80) % 90 * 16 + 8], h8_bk);
     }
-
-    // std::cerr << "intt_9 output, i = " << i << '\n';
-    // for (int j = 0; j < 9; j++) {
-    //   std::cerr << "  j = " << j << '\n';
-    //   std::cerr << "    ";
-    //   for (int k = 0; k < 16; k++) {
-    //     std::cerr << poly[(81 * i + j * 10) % 90 * 16 + k] << " \n"[k == 15];
-    //   }
-    // }
   }
 
 }

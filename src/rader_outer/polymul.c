@@ -2,8 +2,6 @@
 
 #include <arm_neon.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "rader_outer/ntt_17.h"
 #include "rader_outer/ntt_3_2.h"
@@ -78,30 +76,3 @@ void polymul(int16_t *des, const int16_t *src1, const int16_t *src2) {
 
     Rq_reduce(des, out_tmp);
 }
-
-// int16_t in1_poly[1632] = {};
-// int16_t in2_poly[1632] = {};
-// int16_t out_poly[1632] = {};
-// int16_t out_red[1632] = {};
-
-// int main() {
-//     for (int i = 0; i < 100000; i++) {
-//         polymul(out_poly, in1_poly, in2_poly);
-//         Rq_reduce(out_red, out_poly);
-//     }
-// }
-
-// int main() {
-//     for (int i = 0; i < 761; i++) {
-//         scanf("%hd\n", &in1_poly[i]);
-//     }
-//     for (int i = 0; i < 761; i++) {
-//         scanf("%hd\n", &in2_poly[i]);
-//     }
-//     polymul(out_poly, in1_poly, in2_poly);
-//     Rq_reduce(out_red, out_poly);
-//     for (int i = 0; i < 761; i++) {
-//         printf("%hd%c", out_red[i], " \n"[i == 760]);
-//     }
-// }
-

@@ -2,12 +2,10 @@
 
 #include <arm_neon.h>
 #include <cstring>
-#include <iostream>
 
 #include "sntrup761.h"
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
-#include "utils/debug.h"
 
 #include "neon/ntt_10.h"
 #include "neon/intt_10_x10.h"
@@ -128,7 +126,6 @@ void center_poly(int16_t poly[]) {
 // inx_poly[761 : 800] filled with zero
 // out_poly length must >= 768
 void mult(const int16_t in1_poly[], const int16_t in2_poly[], int16_t out_poly[]) {
-
   static int16_t in1_ntt[10][9][16] = {};
   static int16_t in2_ntt[10][9][16] = {};
   static int16_t out_ntt[10][9][16] = {};
@@ -140,9 +137,6 @@ void mult(const int16_t in1_poly[], const int16_t in2_poly[], int16_t out_poly[]
   mult_low(in1_poly, in2_poly, out_low);
   base_mul(in1_ntt, in2_ntt, out_ntt);
   backward(out_ntt, out_main);
-  // for (int i = 0; i < 1440; i++) {
-  //   std::cerr << out_main[i] << " \n"[i == 1439];
-  // }
   crt(out_poly, out_main, out_low);
   center_poly(out_poly);
 }

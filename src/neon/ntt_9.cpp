@@ -3,12 +3,10 @@
 #include <arm_neon.h>
 #include <array>
 #include <cstdint>
-#include <iostream>
 
 #include "sntrup761.h"
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
-#include "utils/debug.h"
 
 constexpr int ORD = 4590;
 constexpr int16_t W_4590 = 11;
@@ -78,15 +76,6 @@ inline void five_nonezero(
 void ntt_9(int16_t ntt[10][9][16], const int16_t poly[800]) {
 
   for (int i = 0; i < 10; i++) {
-    // std::cerr << "ntt_9 input, i = " << i << '\n';
-    // for (int j = 0; j < 9; j++) {
-    //   std::cerr << "  j = " << j << '\n';
-    //   std::cerr << "    ";
-    //   for (int k = 0; k < 16; k++) {
-    //     std::cerr << ntt[i][j][k]  << " \n"[k == 15];
-    //   }
-    // }
-
     {
       int16x8_t x0_fr = vld1q_s16(&poly[i * 16]);
       int16x8_t x1_fr = vld1q_s16(&poly[(10 + i) * 16]);
@@ -94,26 +83,10 @@ void ntt_9(int16_t ntt[10][9][16], const int16_t poly[800]) {
       int16x8_t x3_fr = vld1q_s16(&poly[(30 + i) * 16]);
       int16x8_t x4_fr = vld1q_s16(&poly[(40 + i) * 16]);
 
-      // debug_int16x8(x0_fr);
-      // debug_int16x8(x1_fr);
-      // debug_int16x8(x2_fr);
-      // debug_int16x8(x3_fr);
-      // debug_int16x8(x4_fr);
-
       int16x8_t h0_fr, h1_fr, h2_fr, h3_fr, h4_fr, h5_fr, h6_fr, h7_fr, h8_fr;
       five_nonezero(x0_fr, x1_fr, x2_fr, x3_fr, x4_fr,
           h0_fr, h1_fr, h2_fr, h3_fr, h4_fr,
           h5_fr, h6_fr, h7_fr, h8_fr);
-
-      // debug_int16x8(h0_fr);
-      // debug_int16x8(h1_fr);
-      // debug_int16x8(h2_fr);
-      // debug_int16x8(h3_fr);
-      // debug_int16x8(h4_fr);
-      // debug_int16x8(h5_fr);
-      // debug_int16x8(h6_fr);
-      // debug_int16x8(h7_fr);
-      // debug_int16x8(h8_fr);
 
       h0_fr = barret_mul<Q>(h0_fr, TWISTS[i][0].first, TWISTS[i][0].second);
       h1_fr = barret_mul<Q>(h1_fr, TWISTS[i][1].first, TWISTS[i][1].second);
@@ -124,16 +97,6 @@ void ntt_9(int16_t ntt[10][9][16], const int16_t poly[800]) {
       h6_fr = barret_mul<Q>(h6_fr, TWISTS[i][6].first, TWISTS[i][6].second);
       h7_fr = barret_mul<Q>(h7_fr, TWISTS[i][7].first, TWISTS[i][7].second);
       h8_fr = barret_mul<Q>(h8_fr, TWISTS[i][8].first, TWISTS[i][8].second);
-
-      // debug_int16x8(h0_fr);
-      // debug_int16x8(h1_fr);
-      // debug_int16x8(h2_fr);
-      // debug_int16x8(h3_fr);
-      // debug_int16x8(h4_fr);
-      // debug_int16x8(h5_fr);
-      // debug_int16x8(h6_fr);
-      // debug_int16x8(h7_fr);
-      // debug_int16x8(h8_fr);
 
       vst1q_s16(&ntt[i][0][0], h0_fr);
       vst1q_s16(&ntt[i][1][0], h1_fr);
@@ -152,12 +115,6 @@ void ntt_9(int16_t ntt[10][9][16], const int16_t poly[800]) {
       int16x8_t x2_bk = vld1q_s16(&poly[(20 + i) * 16 + 8]);
       int16x8_t x3_bk = vld1q_s16(&poly[(30 + i) * 16 + 8]);
       int16x8_t x4_bk = vld1q_s16(&poly[(40 + i) * 16 + 8]);
-
-      // debug_int16x8(x0_bk);
-      // debug_int16x8(x1_bk);
-      // debug_int16x8(x2_bk);
-      // debug_int16x8(x3_bk);
-      // debug_int16x8(x4_bk);
 
       int16x8_t h0_bk, h1_bk, h2_bk, h3_bk, h4_bk, h5_bk, h6_bk, h7_bk, h8_bk;
       five_nonezero(x0_bk, x1_bk, x2_bk, x3_bk, x4_bk,
@@ -184,15 +141,6 @@ void ntt_9(int16_t ntt[10][9][16], const int16_t poly[800]) {
       vst1q_s16(&ntt[i][7][8], h7_bk);
       vst1q_s16(&ntt[i][8][8], h8_bk);
     }
-
-    // std::cerr << "ntt_9 output, i = " << i << '\n';
-    // for (int j = 0; j < 9; j++) {
-    //   std::cerr << "  j = " << j << '\n';
-    //   std::cerr << "    ";
-    //   for (int k = 0; k < 16; k++) {
-    //     std::cerr << ntt[i][j][k]  << " \n"[k == 15];
-    //   }
-    // }
   }
 
 }

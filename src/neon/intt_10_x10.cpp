@@ -3,12 +3,10 @@
 #include <arm_neon.h>
 #include <array>
 #include <cstdint>
-#include <iostream>
 
 #include "sntrup761.h"
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
-#include "utils/debug.h"
 
 constexpr int ORD = 4590;
 constexpr int16_t W_4590 = 11;
@@ -27,15 +25,6 @@ constexpr int16_t INV2 = -2295;
 void intt_10_x10(int16_t ntt[10][9][16]) {
 
   for (int j = 0; j < 9; j++) {
-
-    // std::cerr << "intt_10_x10 input, j = " << j << '\n';
-    // for (int i = 0; i < 10; i++) {
-    //   std::cerr << "  i = " << i << '\n';
-    //   std::cerr << "    ";
-    //   for (int k = 0; k < 16; k++) {
-    //     std::cerr << ntt[i][j][k]  << " \n"[k == 15];
-    //   }
-    // }
 
     {
       int16x8_t tmp_front[5][2];
@@ -140,15 +129,6 @@ void intt_10_x10(int16_t ntt[10][9][16]) {
         vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][8], vsubq_s16(tmp_back[i1][0], tmp_back[i1][1]));
       }
     }
-
-    // std::cerr << "intt_10_x10 output, j = " << j << '\n';
-    // for (int i = 0; i < 10; i++) {
-    //   std::cerr << "  i = " << i << '\n';
-    //   std::cerr << "    ";
-    //   for (int k = 0; k < 16; k++) {
-    //     std::cerr << ntt[i][j][k]  << " \n"[k == 15];
-    //   }
-    // }
 
   }
 

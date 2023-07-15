@@ -3,12 +3,10 @@
 #include <arm_neon.h>
 #include <array>
 #include <cstdint>
-#include <iostream>
 
 #include "sntrup761.h"
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
-#include "utils/debug.h"
 
 #include "arith_tmpl/arith.h"
 
@@ -241,16 +239,6 @@ void base_mul_col(int32x4_t &res_front_low, int32x4_t &res_front_high, int32x4_t
 
 void low_base_mul(int16_t in1_ntt[10][16], int16_t in2_ntt[10][16], int16_t out_ntt[10][16]) {
   for (int i = 0; i < 10; i++) {
-    // std::cerr << "low_base_mul input, i = " << i << ", twiddle = " << W_10S[i] << '\n';
-    // std::cerr << "    ";
-    // for (int k = 0; k < 16; k++) {
-    //   std::cerr << in1_ntt[i][k]  << " \n"[k == 15];
-    // }
-    // std::cerr << "    ";
-    // for (int k = 0; k < 16; k++) {
-    //   std::cerr << in2_ntt[i][k]  << " \n"[k == 15];
-    // }
-
     int32x4_t res_front_low = {};
     int32x4_t res_front_high = {};
     int32x4_t res_back_low = {};
@@ -313,24 +301,10 @@ void low_base_mul(int16_t in1_ntt[10][16], int16_t in2_ntt[10][16], int16_t out_
 
     vst1q_s16(&out_ntt[i][0], res_front);
     vst1q_s16(&out_ntt[i][8], res_back);
-
-    // std::cerr << "low_base_mul output, i = " << i << ", twiddle = " << W_10S[i] << '\n';
-    // std::cerr << "    ";
-    // for (int k = 0; k < 16; k++) {
-    //   std::cerr << out_ntt[i][k]  << " \n"[k == 15];
-    // }
   }
-
 }
 
 void low_intt_10(int16_t ntt[10][16], int16_t low[96]) {
-  // for (int i = 0; i < 10; i++) {
-  //   std::cerr << "low_intt_10 input, i = " << i << '\n';
-  //   std::cerr << "    ";
-  //   for (int k = 0; k < 16; k++) {
-  //     std::cerr << ntt[i][k]  << " \n"[k == 15];
-  //   }
-  // }
 
   {
     int16x8_t h0_fr = vld1q_s16(&ntt[0][0]);
@@ -548,40 +522,16 @@ void low_intt_10(int16_t ntt[10][16], int16_t low[96]) {
     // vst1q_s16(&low[88], x5_bk);
   }
 
-  // for (int i = 0; i < 6; i++) {
-  //   std::cerr << "low_intt_10 output, i = " << i << '\n';
-  //   std::cerr << "    ";
-  //   for (int k = 0; k < 16; k++) {
-  //     std::cerr << low[i * 16 + k]  << " \n"[k == 15];
-  //   }
-  // }
 }
 
 void mult_low(const int16_t in1_low[96], const int16_t in2_low[96], int16_t out_low[96]) {
-
   static int16_t in1_low_ntt[10][16];
   static int16_t in2_low_ntt[10][16];
   static int16_t out_low_ntt[10][16];
 
-  // int16_t out_low_ref[81];
-  // for (int i = 0; i < 81; i++) {
-  //   for (int j = 0; i + j < 81; j++) {
-  //     out_low_ref[i + j] = center_lift<int64_t, Q>(out_low_ref[i + j] + int64_t(1) * in1_low[i] * in2_low[j]);
-  //   }
-  // }
-
-  // int32_t diff = int32_t(in1_low[0]) * in2_low[80] + int32_t(in1_low[80]) * in2_low[0];
   low_ntt_10(in1_low_ntt, in1_low);
   low_ntt_10(in2_low_ntt, in2_low);
   low_base_mul(in1_low_ntt, in2_low_ntt, out_low_ntt);
   low_intt_10(out_low_ntt, out_low);
-  // out_low[80] += diff - int16_t((diff * int64_t(467759) + (int64_t(1) << 30)) >> 31) * Q;
   out_low[80] = center_lift<int64_t, Q>(out_low[80] - 720 * (int64_t(in1_low[0]) * in2_low[80] + int64_t(in1_low[80]) * in2_low[0]));
-
-  // for (int i = 0; i < 81; i++) {
-  //   std::cerr << out_low[i] << " \n"[i == 80];
-  // }
-  // for (int i = 0; i < 81; i++) {
-  //   std::cerr << out_low_ref[i] << " \n"[i == 80];
-  // }
 }

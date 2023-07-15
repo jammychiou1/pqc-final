@@ -3,12 +3,10 @@
 #include <arm_neon.h>
 #include <array>
 #include <cstdint>
-#include <iostream>
 
 #include "sntrup761.h"
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
-#include "utils/debug.h"
 
 constexpr int ORD = 4590;
 constexpr int16_t W_4590 = 11;
@@ -50,16 +48,6 @@ void base_mul_col(int32x4_t &res_front_low, int32x4_t &res_front_high, int32x4_t
 void base_mul(int16_t in1_ntt[10][9][16], int16_t in2_ntt[10][9][16], int16_t out_ntt[10][9][16]) {
   for (int i = 0; i < 10; i++) {
     for (int j = 0; j < 9; j++) {
-      // std::cerr << "base_mul input, i = " << i << ", j = " << j << ", twiddle = " << base_mul_twiddles[i][j] << '\n';
-      // std::cerr << "    ";
-      // for (int k = 0; k < 16; k++) {
-      //   std::cerr << in1_ntt[i][j][k]  << " \n"[k == 15];
-      // }
-      // std::cerr << "    ";
-      // for (int k = 0; k < 16; k++) {
-      //   std::cerr << in2_ntt[i][j][k]  << " \n"[k == 15];
-      // }
-
       int32x4_t res_front_low = {};
       int32x4_t res_front_high = {};
       int32x4_t res_back_low = {};
@@ -122,12 +110,6 @@ void base_mul(int16_t in1_ntt[10][9][16], int16_t in2_ntt[10][9][16], int16_t ou
 
       vst1q_s16(&out_ntt[i][j][0], res_front);
       vst1q_s16(&out_ntt[i][j][8], res_back);
-
-      // std::cerr << "base_mul output, i = " << i << ", j = " << j << ", twiddle = " << base_mul_twiddles[i][j] << '\n';
-      // std::cerr << "    ";
-      // for (int k = 0; k < 16; k++) {
-      //   std::cerr << out_ntt[i][j][k]  << " \n"[k == 15];
-      // }
     }
   }
 }
