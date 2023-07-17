@@ -487,5 +487,7 @@ void mult_low(const int16_t in1_low[96], const int16_t in2_low[96], int16_t out_
   low_ntt_10(in2_low_ntt, in2_low);
   low_base_mul(in1_low_ntt, in2_low_ntt, out_low_ntt);
   low_intt_10(out_low_ntt, out_low);
-  out_low[80] = center_lift<int64_t, Q>(out_low[80] - 720 * (int64_t(in1_low[0]) * in2_low[80] + int64_t(in1_low[80]) * in2_low[0]));
+  int64_t tmp = (out_low[80] - 720 * (int64_t(in1_low[0]) * in2_low[80] + int64_t(in1_low[80]) * in2_low[0]));
+  int32_t esti = (tmp * 935519 + (1ll << 31)) >> 32;
+  out_low[80] = tmp - 4591 * esti;
 }
