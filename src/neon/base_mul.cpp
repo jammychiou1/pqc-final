@@ -8,9 +8,6 @@
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
 
-#include <iostream>
-#include "utils/debug.h"
-
 constexpr int ORD = 4590;
 constexpr int16_t W_4590 = 11;
 
@@ -62,28 +59,16 @@ void base_mul(int16_t in1_ntt[10][9][16], int16_t in2_ntt[10][9][16], int16_t ou
     for (int j = 0; j < 9; j++) {
       int16_t twiddle = base_mul_twiddles[i][j];
       int16_t twiddle_bar = base_mul_twiddle_bars[i][j];
-      // std::cerr << "twiddle: " << twiddle << ", " << twiddle_bar << '\n';
 
       int16x8_t a_fr = vld1q_s16(&in1_ntt[i][j][0]);
       int16x8_t a_bk = vld1q_s16(&in1_ntt[i][j][8]);
-
-      // std::cerr << "a:\n";
-      // debug_int16x8(a_fr);
-      // debug_int16x8(a_bk);
 
       int16x8_t a_fb = a_fr;
       barret_reduce<Q>(a_fb);
       a_fb = vaddq_s16(a_fb, a_bk);
 
-      // std::cerr << "a_fb:\n";
-      // debug_int16x8(a_fb);
-
       int16x8_t b_fr = vld1q_s16(&in2_ntt[i][j][0]);
       int16x8_t b_bk = vld1q_s16(&in2_ntt[i][j][8]);
-
-      // std::cerr << "b:\n";
-      // debug_int16x8(b_fr);
-      // debug_int16x8(b_bk);
 
       barret_reduce<Q>(b_fr);
 
@@ -93,14 +78,6 @@ void base_mul(int16_t in1_ntt[10][9][16], int16_t in2_ntt[10][9][16], int16_t ou
       int16x8_t c21 = vsubq_s16(b_fr, c11);
       int16x8_t c02 = vnegq_s16(c21);
       int16x8_t c01 = barret_mul<Q>(c22, -twiddle, -twiddle_bar);
-
-      // std::cerr << "c:\n";
-      // debug_int16x8(c12);
-      // debug_int16x8(c11);
-      // debug_int16x8(c22);
-      // debug_int16x8(c21);
-      // debug_int16x8(c02);
-      // debug_int16x8(c01);
 
       int32x4_t res_fr_low = {};
       int32x4_t res_fr_high = {};
@@ -125,27 +102,6 @@ void base_mul(int16_t in1_ntt[10][9][16], int16_t in2_ntt[10][9][16], int16_t ou
 
       int16x8_t res_fr = vuzp1q_s16(vreinterpretq_s16_s32(res_fr_low), vreinterpretq_s16_s32(res_fr_high));
       int16x8_t res_bk = vuzp1q_s16(vreinterpretq_s16_s32(res_bk_low), vreinterpretq_s16_s32(res_bk_high));
-
-      // std::cerr << "res:\n";
-      // debug_int16x8(res_fr);
-      // debug_int16x8(res_bk);
-
-      // int64_t tmp[16] = {};
-      // for (int k1 = 0; k1 < 16; k1++) {
-      //   for (int k2 = 0; k2 < 16; k2++) {
-      //     if (k1 + k2 >= 16) {
-      //       tmp[k1 + k2 - 16] += int64_t(twiddle) * in1_ntt[i][j][k1] * in2_ntt[i][j][k2];
-      //     }
-      //     else {
-      //       tmp[k1 + k2] += int64_t(1) * in1_ntt[i][j][k1] * in2_ntt[i][j][k2];
-      //     }
-      //   }
-      // }
-      // std::cerr << "reference:\n";
-      // for (int k = 0; k < 16; k++) {
-      //   std::cerr << center_lift<int64_t, Q>(tmp[k]) << " \n"[k == 15];
-
-      // }
 
       vst1q_s16(&out_ntt[i][j][0], res_fr);
       vst1q_s16(&out_ntt[i][j][8], res_bk);
