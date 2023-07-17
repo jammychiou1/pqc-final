@@ -88,10 +88,6 @@ void low_ntt_10(int16_t ntt[10][16], const int16_t low[96]) {
     int16x8_t h8_fr = vsubq_s16(nc0a_fr, nn0a_fr);
     int16x8_t h4_fr = vaddq_s16(nc1a_fr, nn1a_fr);
     int16x8_t h6_fr = vsubq_s16(nc1a_fr, nn1a_fr);
-    // h2_fr = barret_mul_const<Q, -INV2>(h2_fr);
-    // h8_fr = barret_mul_const<Q, -INV2>(h8_fr);
-    // h4_fr = barret_mul_const<Q, -INV2>(h4_fr);
-    // h6_fr = barret_mul_const<Q, -INV2>(h6_fr);
     int16x8_t dx0_fr = vshlq_n_s16(x0_fr, 1);
     h2_fr = vsubq_s16(h2_fr, dx0_fr);
     h8_fr = vsubq_s16(h8_fr, dx0_fr);
@@ -102,10 +98,6 @@ void low_ntt_10(int16_t ntt[10][16], const int16_t low[96]) {
     int16x8_t h3_fr = vsubq_s16(nc0s_fr, nn0s_fr);
     int16x8_t h9_fr = vaddq_s16(nc1s_fr, nn1s_fr);
     int16x8_t h1_fr = vsubq_s16(nc1s_fr, nn1s_fr);
-    // h7_fr = barret_mul_const<Q, -INV2>(h7_fr);
-    // h3_fr = barret_mul_const<Q, -INV2>(h3_fr);
-    // h9_fr = barret_mul_const<Q, -INV2>(h9_fr);
-    // h1_fr = barret_mul_const<Q, -INV2>(h1_fr);
     h7_fr = vsubq_s16(h7_fr, dx0_fr);
     h3_fr = vsubq_s16(h3_fr, dx0_fr);
     h9_fr = vsubq_s16(h9_fr, dx0_fr);
@@ -192,10 +184,6 @@ void low_ntt_10(int16_t ntt[10][16], const int16_t low[96]) {
     int16x8_t h8_bk = vsubq_s16(nc0a_bk, nn0a_bk);
     int16x8_t h4_bk = vaddq_s16(nc1a_bk, nn1a_bk);
     int16x8_t h6_bk = vsubq_s16(nc1a_bk, nn1a_bk);
-    // h2_bk = barret_mul_const<Q, -INV2>(h2_bk);
-    // h8_bk = barret_mul_const<Q, -INV2>(h8_bk);
-    // h4_bk = barret_mul_const<Q, -INV2>(h4_bk);
-    // h6_bk = barret_mul_const<Q, -INV2>(h6_bk);
     int16x8_t dx0_bk = vshlq_n_s16(x0_bk, 1);
     h2_bk = vsubq_s16(h2_bk, dx0_bk);
     h8_bk = vsubq_s16(h8_bk, dx0_bk);
@@ -206,10 +194,6 @@ void low_ntt_10(int16_t ntt[10][16], const int16_t low[96]) {
     int16x8_t h3_bk = vsubq_s16(nc0s_bk, nn0s_bk);
     int16x8_t h9_bk = vaddq_s16(nc1s_bk, nn1s_bk);
     int16x8_t h1_bk = vsubq_s16(nc1s_bk, nn1s_bk);
-    // h7_bk = barret_mul_const<Q, -INV2>(h7_bk);
-    // h3_bk = barret_mul_const<Q, -INV2>(h3_bk);
-    // h9_bk = barret_mul_const<Q, -INV2>(h9_bk);
-    // h1_bk = barret_mul_const<Q, -INV2>(h1_bk);
     h7_bk = vsubq_s16(h7_bk, dx0_bk);
     h3_bk = vsubq_s16(h3_bk, dx0_bk);
     h9_bk = vsubq_s16(h9_bk, dx0_bk);
@@ -261,13 +245,10 @@ void low_base_mul(int16_t in1_ntt[10][16], int16_t in2_ntt[10][16], int16_t out_
     int16x8_t a_bk = vld1q_s16(&in1_ntt[i][8]);
 
     int16x8_t a_fb = a_fr;
-    barret_reduce<Q>(a_fb);
     a_fb = vaddq_s16(a_fb, a_bk);
 
     int16x8_t b_fr = vld1q_s16(&in2_ntt[i][0]);
     int16x8_t b_bk = vld1q_s16(&in2_ntt[i][8]);
-
-    barret_reduce<Q>(b_fr);
 
     int16x8_t c12 = b_fr;
     int16x8_t c11 = barret_mul<Q>(b_bk, twiddle, twiddle_bar);
@@ -339,15 +320,6 @@ void low_intt_10(int16_t ntt[10][16], int16_t low[96]) {
     int16x8_t x0_fr = vaddq_s16(a05_fr, s05_fr);
     int16x8_t x5_fr = vsubq_s16(a05_fr, s05_fr);
 
-    // nc0a_fr = barret_mul_const<Q, -INV2>(nc0a_fr);
-    // nn0a_fr = barret_mul_const<Q, -INV2>(nn0a_fr);
-    // nc1a_fr = barret_mul_const<Q, -INV2>(nc1a_fr);
-    // nn1a_fr = barret_mul_const<Q, -INV2>(nn1a_fr);
-    // nc0s_fr = barret_mul_const<Q, -INV2>(nc0s_fr);
-    // nn0s_fr = barret_mul_const<Q, -INV2>(nn0s_fr);
-    // nc1s_fr = barret_mul_const<Q, -INV2>(nc1s_fr);
-    // nn1s_fr = barret_mul_const<Q, -INV2>(nn1s_fr);
-
     // a part
 
     int16x8_t a41_fr;
@@ -394,13 +366,6 @@ void low_intt_10(int16_t ntt[10][16], int16_t low[96]) {
     int16x8_t x1_fr = vsubq_s16(a41_fr, s41_fr);
     int16x8_t x2_fr = vaddq_s16(a23_fr, s23_fr);
     int16x8_t x3_fr = vsubq_s16(a23_fr, s23_fr);
-
-    // x0_fr = barret_mul_const<Q, INV10>(x0_fr);
-    // x1_fr = barret_mul_const<Q, INV10>(x1_fr);
-    // x2_fr = barret_mul_const<Q, INV10>(x2_fr);
-    // x3_fr = barret_mul_const<Q, INV10>(x3_fr);
-    // x4_fr = barret_mul_const<Q, INV10>(x4_fr);
-    // x5_fr = barret_mul_const<Q, INV10>(x5_fr);
 
     x0_fr = barret_mul_const<Q, -18>(x0_fr);
     x1_fr = barret_mul_const<Q, 9>(x1_fr);
@@ -449,15 +414,6 @@ void low_intt_10(int16_t ntt[10][16], int16_t low[96]) {
     int16x8_t x0_bk = vaddq_s16(a05_bk, s05_bk);
     // int16x8_t x5_bk = vsubq_s16(a05_bk, s05_bk);
 
-    // nc0a_bk = barret_mul_const<Q, -INV2>(nc0a_bk);
-    // nn0a_bk = barret_mul_const<Q, -INV2>(nn0a_bk);
-    // nc1a_bk = barret_mul_const<Q, -INV2>(nc1a_bk);
-    // nn1a_bk = barret_mul_const<Q, -INV2>(nn1a_bk);
-    // nc0s_bk = barret_mul_const<Q, -INV2>(nc0s_bk);
-    // nn0s_bk = barret_mul_const<Q, -INV2>(nn0s_bk);
-    // nc1s_bk = barret_mul_const<Q, -INV2>(nc1s_bk);
-    // nn1s_bk = barret_mul_const<Q, -INV2>(nn1s_bk);
-
     // a part
 
     int16x8_t a41_bk;
@@ -504,13 +460,6 @@ void low_intt_10(int16_t ntt[10][16], int16_t low[96]) {
     int16x8_t x1_bk = vsubq_s16(a41_bk, s41_bk);
     int16x8_t x2_bk = vaddq_s16(a23_bk, s23_bk);
     int16x8_t x3_bk = vsubq_s16(a23_bk, s23_bk);
-
-    // x0_bk = barret_mul_const<Q, INV10>(x0_bk);
-    // x1_bk = barret_mul_const<Q, INV10>(x1_bk);
-    // x2_bk = barret_mul_const<Q, INV10>(x2_bk);
-    // x3_bk = barret_mul_const<Q, INV10>(x3_bk);
-    // x4_bk = barret_mul_const<Q, INV10>(x4_bk);
-    // x5_bk = barret_mul_const<Q, INV10>(x5_bk);
 
     x0_bk = barret_mul_const<Q, -18>(x0_bk);
     x1_bk = barret_mul_const<Q, 9>(x1_bk);
