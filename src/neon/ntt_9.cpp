@@ -73,7 +73,7 @@ inline void five_nonezero(
   btrfly3(a2, b2, c2, h2, h5, h8);
 }
 
-void ntt_9(int16_t ntt[10][9][16], const int16_t poly[800]) {
+void ntt_9(int16_t ntt[9][2][10][8], const int16_t poly[800]) {
 
   for (int i = 0; i < 10; i++) {
     {
@@ -98,15 +98,15 @@ void ntt_9(int16_t ntt[10][9][16], const int16_t poly[800]) {
       h7_fr = barret_mul<Q>(h7_fr, TWISTS[i][7].first, TWISTS[i][7].second);
       h8_fr = barret_mul<Q>(h8_fr, TWISTS[i][8].first, TWISTS[i][8].second);
 
-      vst1q_s16(&ntt[i][0][0], h0_fr);
-      vst1q_s16(&ntt[i][1][0], h1_fr);
-      vst1q_s16(&ntt[i][2][0], h2_fr);
-      vst1q_s16(&ntt[i][3][0], h3_fr);
-      vst1q_s16(&ntt[i][4][0], h4_fr);
-      vst1q_s16(&ntt[i][5][0], h5_fr);
-      vst1q_s16(&ntt[i][6][0], h6_fr);
-      vst1q_s16(&ntt[i][7][0], h7_fr);
-      vst1q_s16(&ntt[i][8][0], h8_fr);
+      vst1q_s16(&ntt[0][0][i][0], h0_fr);
+      vst1q_s16(&ntt[1][0][i][0], h1_fr);
+      vst1q_s16(&ntt[2][0][i][0], h2_fr);
+      vst1q_s16(&ntt[3][0][i][0], h3_fr);
+      vst1q_s16(&ntt[4][0][i][0], h4_fr);
+      vst1q_s16(&ntt[5][0][i][0], h5_fr);
+      vst1q_s16(&ntt[6][0][i][0], h6_fr);
+      vst1q_s16(&ntt[7][0][i][0], h7_fr);
+      vst1q_s16(&ntt[8][0][i][0], h8_fr);
     }
 
     {
@@ -131,15 +131,15 @@ void ntt_9(int16_t ntt[10][9][16], const int16_t poly[800]) {
       h7_bk = barret_mul<Q>(h7_bk, TWISTS[i][7].first, TWISTS[i][7].second);
       h8_bk = barret_mul<Q>(h8_bk, TWISTS[i][8].first, TWISTS[i][8].second);
 
-      vst1q_s16(&ntt[i][0][8], h0_bk);
-      vst1q_s16(&ntt[i][1][8], h1_bk);
-      vst1q_s16(&ntt[i][2][8], h2_bk);
-      vst1q_s16(&ntt[i][3][8], h3_bk);
-      vst1q_s16(&ntt[i][4][8], h4_bk);
-      vst1q_s16(&ntt[i][5][8], h5_bk);
-      vst1q_s16(&ntt[i][6][8], h6_bk);
-      vst1q_s16(&ntt[i][7][8], h7_bk);
-      vst1q_s16(&ntt[i][8][8], h8_bk);
+      vst1q_s16(&ntt[0][1][i][0], h0_bk);
+      vst1q_s16(&ntt[1][1][i][0], h1_bk);
+      vst1q_s16(&ntt[2][1][i][0], h2_bk);
+      vst1q_s16(&ntt[3][1][i][0], h3_bk);
+      vst1q_s16(&ntt[4][1][i][0], h4_bk);
+      vst1q_s16(&ntt[5][1][i][0], h5_bk);
+      vst1q_s16(&ntt[6][1][i][0], h6_bk);
+      vst1q_s16(&ntt[7][1][i][0], h7_bk);
+      vst1q_s16(&ntt[8][1][i][0], h8_bk);
     }
   }
 

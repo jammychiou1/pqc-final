@@ -54,21 +54,21 @@ inline void base_mul_8(int32x4_t &res_low, int32x4_t &res_high, int16x8_t m1, in
   base_mul_col_8<7>(res_low, res_high, vextq_s16(m1, m2, 1), v);
 }
 
-void base_mul(int16_t in1_ntt[10][9][16], int16_t in2_ntt[10][9][16], int16_t out_ntt[10][9][16]) {
+void base_mul(int16_t in1_ntt[9][2][10][8], int16_t in2_ntt[9][2][10][8], int16_t out_ntt[9][2][10][8]) {
   for (int i = 0; i < 10; i++) {
     for (int j = 0; j < 9; j++) {
       int16_t twiddle = base_mul_twiddles[i][j];
       int16_t twiddle_bar = base_mul_twiddle_bars[i][j];
 
-      int16x8_t a_fr = vld1q_s16(&in1_ntt[i][j][0]);
-      int16x8_t a_bk = vld1q_s16(&in1_ntt[i][j][8]);
+      int16x8_t a_fr = vld1q_s16(&in1_ntt[j][0][i][0]);
+      int16x8_t a_bk = vld1q_s16(&in1_ntt[j][1][i][0]);
 
       int16x8_t a_fb = a_fr;
       barret_reduce<Q>(a_fb);
       a_fb = vaddq_s16(a_fb, a_bk);
 
-      int16x8_t b_fr = vld1q_s16(&in2_ntt[i][j][0]);
-      int16x8_t b_bk = vld1q_s16(&in2_ntt[i][j][8]);
+      int16x8_t b_fr = vld1q_s16(&in2_ntt[j][0][i][0]);
+      int16x8_t b_bk = vld1q_s16(&in2_ntt[j][1][i][0]);
 
       barret_reduce<Q>(b_fr);
 
@@ -103,8 +103,8 @@ void base_mul(int16_t in1_ntt[10][9][16], int16_t in2_ntt[10][9][16], int16_t ou
       int16x8_t res_fr = vuzp1q_s16(vreinterpretq_s16_s32(res_fr_low), vreinterpretq_s16_s32(res_fr_high));
       int16x8_t res_bk = vuzp1q_s16(vreinterpretq_s16_s32(res_bk_low), vreinterpretq_s16_s32(res_bk_high));
 
-      vst1q_s16(&out_ntt[i][j][0], res_fr);
-      vst1q_s16(&out_ntt[i][j][8], res_bk);
+      vst1q_s16(&out_ntt[j][0][i][0], res_fr);
+      vst1q_s16(&out_ntt[j][1][i][0], res_bk);
     }
   }
 }

@@ -62,19 +62,19 @@ inline void btrfly9(
 }
 
 
-void intt_9_x9(int16_t ntt[10][9][16], int16_t poly[1440]) {
+void intt_9_x9(int16_t ntt[9][2][10][8], int16_t poly[1440]) {
 
   for (int i = 0; i < 10; i++) {
     {
-      int16x8_t x0_fr = vld1q_s16(&ntt[i][0][0]);
-      int16x8_t x1_fr = vld1q_s16(&ntt[i][8][0]);
-      int16x8_t x2_fr = vld1q_s16(&ntt[i][7][0]);
-      int16x8_t x3_fr = vld1q_s16(&ntt[i][6][0]);
-      int16x8_t x4_fr = vld1q_s16(&ntt[i][5][0]);
-      int16x8_t x5_fr = vld1q_s16(&ntt[i][4][0]);
-      int16x8_t x6_fr = vld1q_s16(&ntt[i][3][0]);
-      int16x8_t x7_fr = vld1q_s16(&ntt[i][2][0]);
-      int16x8_t x8_fr = vld1q_s16(&ntt[i][1][0]);
+      int16x8_t x0_fr = vld1q_s16(&ntt[0][0][i][0]);
+      int16x8_t x1_fr = vld1q_s16(&ntt[8][0][i][0]);
+      int16x8_t x2_fr = vld1q_s16(&ntt[7][0][i][0]);
+      int16x8_t x3_fr = vld1q_s16(&ntt[6][0][i][0]);
+      int16x8_t x4_fr = vld1q_s16(&ntt[5][0][i][0]);
+      int16x8_t x5_fr = vld1q_s16(&ntt[4][0][i][0]);
+      int16x8_t x6_fr = vld1q_s16(&ntt[3][0][i][0]);
+      int16x8_t x7_fr = vld1q_s16(&ntt[2][0][i][0]);
+      int16x8_t x8_fr = vld1q_s16(&ntt[1][0][i][0]);
 
       barret_reduce<Q>(x0_fr);
       barret_reduce<Q>(x1_fr);
@@ -105,15 +105,15 @@ void intt_9_x9(int16_t ntt[10][9][16], int16_t poly[1440]) {
     }
 
     {
-      int16x8_t x0_bk = vld1q_s16(&ntt[i][0][8]);
-      int16x8_t x1_bk = vld1q_s16(&ntt[i][8][8]);
-      int16x8_t x2_bk = vld1q_s16(&ntt[i][7][8]);
-      int16x8_t x3_bk = vld1q_s16(&ntt[i][6][8]);
-      int16x8_t x4_bk = vld1q_s16(&ntt[i][5][8]);
-      int16x8_t x5_bk = vld1q_s16(&ntt[i][4][8]);
-      int16x8_t x6_bk = vld1q_s16(&ntt[i][3][8]);
-      int16x8_t x7_bk = vld1q_s16(&ntt[i][2][8]);
-      int16x8_t x8_bk = vld1q_s16(&ntt[i][1][8]);
+      int16x8_t x0_bk = vld1q_s16(&ntt[0][1][i][0]);
+      int16x8_t x1_bk = vld1q_s16(&ntt[8][1][i][0]);
+      int16x8_t x2_bk = vld1q_s16(&ntt[7][1][i][0]);
+      int16x8_t x3_bk = vld1q_s16(&ntt[6][1][i][0]);
+      int16x8_t x4_bk = vld1q_s16(&ntt[5][1][i][0]);
+      int16x8_t x5_bk = vld1q_s16(&ntt[4][1][i][0]);
+      int16x8_t x6_bk = vld1q_s16(&ntt[3][1][i][0]);
+      int16x8_t x7_bk = vld1q_s16(&ntt[2][1][i][0]);
+      int16x8_t x8_bk = vld1q_s16(&ntt[1][1][i][0]);
 
       barret_reduce<Q>(x0_bk);
       barret_reduce<Q>(x1_bk);

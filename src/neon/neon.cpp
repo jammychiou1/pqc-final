@@ -14,7 +14,7 @@
 #include "neon/base_mul.h"
 #include "neon/mult_low.h"
 
-void forward(const int16_t in_poly[], int16_t out_ntt[10][9][16]) {
+void forward(const int16_t in_poly[], int16_t out_ntt[9][2][10][8]) {
   ntt_9(out_ntt, in_poly);
   ntt_10(out_ntt);
 }
@@ -39,7 +39,7 @@ void div360_main(int16_t main_poly[1440]) {
   }
 }
 
-void backward(int16_t in_ntt[10][9][16], int16_t out_main[1440]) {
+void backward(int16_t in_ntt[9][2][10][8], int16_t out_main[1440]) {
   intt_10_x10(in_ntt);
   intt_9_x9(in_ntt, out_main);
   // div360_main(out_main);
@@ -126,9 +126,9 @@ void center_poly(int16_t poly[]) {
 // inx_poly[761 : 800] filled with zero
 // out_poly length must >= 768
 void mult(const int16_t in1_poly[], const int16_t in2_poly[], int16_t out_poly[]) {
-  static int16_t in1_ntt[10][9][16] = {};
-  static int16_t in2_ntt[10][9][16] = {};
-  static int16_t out_ntt[10][9][16] = {};
+  static int16_t in1_ntt[9][2][10][8] = {};
+  static int16_t in2_ntt[9][2][10][8] = {};
+  static int16_t out_ntt[9][2][10][8] = {};
   static int16_t out_low[96] = {};
   static int16_t out_main[1448] = {};
 

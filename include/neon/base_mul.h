@@ -3,6 +3,6 @@
 
 #include <cstdint>
 
-void base_mul(int16_t in1_ntt[10][9][16], int16_t in2_ntt[10][9][16], int16_t out_ntt[10][9][16]);
+void base_mul(int16_t in1_ntt[9][2][10][8], int16_t in2_ntt[9][2][10][8], int16_t out_ntt[9][2][10][8]);
 
 #endif // BASE_MUL_H

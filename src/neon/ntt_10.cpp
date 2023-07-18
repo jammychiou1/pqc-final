@@ -22,7 +22,7 @@ constexpr int16_t W5_W5_2_mW5_3_mW5_4 = 1327;
 
 constexpr int16_t INV2 = -2295;
 
-void ntt_10(int16_t ntt[10][9][16]) {
+void ntt_10(int16_t ntt[9][2][10][8]) {
 
   for (int j = 0; j < 9; j++) {
 
@@ -30,11 +30,11 @@ void ntt_10(int16_t ntt[10][9][16]) {
       int16x8_t tmp_front[5][2];
 
       for (int i2 = 0; i2 < 2; i2++) {
-        int16x8_t f0_front = vld1q_s16(&ntt[5 * i2][j][0]);
-        int16x8_t f1_front = vld1q_s16(&ntt[(5 * i2 + 6) % 10][j][0]);
-        int16x8_t f2_front = vld1q_s16(&ntt[(5 * i2 + 2) % 10][j][0]);
-        int16x8_t f3_front = vld1q_s16(&ntt[(5 * i2 + 8) % 10][j][0]);
-        int16x8_t f4_front = vld1q_s16(&ntt[(5 * i2 + 4) % 10][j][0]);
+        int16x8_t f0_front = vld1q_s16(&ntt[j][0][5 * i2][0]);
+        int16x8_t f1_front = vld1q_s16(&ntt[j][0][(5 * i2 + 6) % 10][0]);
+        int16x8_t f2_front = vld1q_s16(&ntt[j][0][(5 * i2 + 2) % 10][0]);
+        int16x8_t f3_front = vld1q_s16(&ntt[j][0][(5 * i2 + 8) % 10][0]);
+        int16x8_t f4_front = vld1q_s16(&ntt[j][0][(5 * i2 + 4) % 10][0]);
 
         int16x8_t f1_f4_front = vaddq_s16(f1_front, f4_front);
         int16x8_t f1_mf4_front = vsubq_s16(f1_front, f4_front);
@@ -83,8 +83,8 @@ void ntt_10(int16_t ntt[10][9][16]) {
       }
 
       for (int i1 = 0; i1 < 5; i1++) {
-        vst1q_s16(&ntt[2 * i1][j][0], vaddq_s16(tmp_front[i1][0], tmp_front[i1][1]));
-        vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][0], vsubq_s16(tmp_front[i1][0], tmp_front[i1][1]));
+        vst1q_s16(&ntt[j][0][2 * i1][0], vaddq_s16(tmp_front[i1][0], tmp_front[i1][1]));
+        vst1q_s16(&ntt[j][0][(2 * i1 + 5) % 10][0], vsubq_s16(tmp_front[i1][0], tmp_front[i1][1]));
       }
     }
 
@@ -92,11 +92,11 @@ void ntt_10(int16_t ntt[10][9][16]) {
       int16x8_t tmp_back[5][2];
 
       for (int i2 = 0; i2 < 2; i2++) {
-        int16x8_t f0_back = vld1q_s16(&ntt[5 * i2][j][8]);
-        int16x8_t f1_back = vld1q_s16(&ntt[(5 * i2 + 6) % 10][j][8]);
-        int16x8_t f2_back = vld1q_s16(&ntt[(5 * i2 + 2) % 10][j][8]);
-        int16x8_t f3_back = vld1q_s16(&ntt[(5 * i2 + 8) % 10][j][8]);
-        int16x8_t f4_back = vld1q_s16(&ntt[(5 * i2 + 4) % 10][j][8]);
+        int16x8_t f0_back = vld1q_s16(&ntt[j][1][5 * i2][0]);
+        int16x8_t f1_back = vld1q_s16(&ntt[j][1][(5 * i2 + 6) % 10][0]);
+        int16x8_t f2_back = vld1q_s16(&ntt[j][1][(5 * i2 + 2) % 10][0]);
+        int16x8_t f3_back = vld1q_s16(&ntt[j][1][(5 * i2 + 8) % 10][0]);
+        int16x8_t f4_back = vld1q_s16(&ntt[j][1][(5 * i2 + 4) % 10][0]);
 
         int16x8_t f1_f4_back = vaddq_s16(f1_back, f4_back);
         int16x8_t f1_mf4_back = vsubq_s16(f1_back, f4_back);
@@ -145,8 +145,8 @@ void ntt_10(int16_t ntt[10][9][16]) {
       }
 
       for (int i1 = 0; i1 < 5; i1++) {
-        vst1q_s16(&ntt[2 * i1][j][8], vaddq_s16(tmp_back[i1][0], tmp_back[i1][1]));
-        vst1q_s16(&ntt[(2 * i1 + 5) % 10][j][8], vsubq_s16(tmp_back[i1][0], tmp_back[i1][1]));
+        vst1q_s16(&ntt[j][1][2 * i1][0], vaddq_s16(tmp_back[i1][0], tmp_back[i1][1]));
+        vst1q_s16(&ntt[j][1][(2 * i1 + 5) % 10][0], vsubq_s16(tmp_back[i1][0], tmp_back[i1][1]));
       }
     }
 
