@@ -8,18 +8,6 @@
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
 
-// constexpr int ORD = 4590;
-// constexpr int16_t W_4590 = 11;
-
-// constexpr int16_t W_5 = gen_pow<int16_t, Q>(W_4590, ORD / 5);
-// constexpr std::array<int16_t, 17> W_5S = gen_pows<int16_t, 17, Q>(W_5);
-
-// constexpr int16_t K1 = -502; // -(W_5 + W_5^4)
-// constexpr int16_t K2 = 459; // W_5 - W_5^4
-// constexpr int16_t K3 = 503; // -(W_5^2 + W_5^3)
-// constexpr int16_t K4 = 868; // W_5^2 - W_5^3
-// constexpr int16_t K5 = -1327; // W_5 + W_5^2 - W_5^3 - W_5^4
-
 constexpr static std::array<int16_t, 8> coefs = {
   -502, // -(W_5 + W_5^4)
   459, // W_5 - W_5^4
