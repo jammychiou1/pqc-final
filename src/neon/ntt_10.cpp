@@ -20,6 +20,12 @@ constexpr int16_t K3 = 503; // -(W_5^2 + W_5^3)
 constexpr int16_t K4 = 868; // W_5^2 - W_5^3
 constexpr int16_t K5 = -1327; // W_5 + W_5^2 - W_5^3 - W_5^4
 
+inline void btrfly2_inplace(int16x8_t &x0, int16x8_t &x1) {
+  int16x8_t tmp = vsubq_s16(x0, x1);
+  x0 = vaddq_s16(x0, x1);
+  x1 = tmp;
+}
+
 inline void btrfly5_xn2(int16x8_t x0, int16x8_t x1, int16x8_t x2, int16x8_t x3, int16x8_t x4,
     int16x8_t &h0, int16x8_t &h1, int16x8_t &h2, int16x8_t &h3, int16x8_t &h4) {
 
@@ -73,24 +79,35 @@ void ntt_10(int16_t ntt[9][2][10][8]) {
     btrfly5_xn2(x4567.val[1], x0123.val[1], x4567.val[3], x0123.val[3], x89.val[1],
         h10, h11, h12, h13, h14);
 
-    int16x8x4_t h0123;
-    int16x8x4_t h4567;
-    int16x8x2_t h89;
+    btrfly2_inplace(h00, h10);
+    btrfly2_inplace(h01, h11);
+    btrfly2_inplace(h02, h12);
+    btrfly2_inplace(h03, h13);
+    btrfly2_inplace(h04, h14);
 
-    h0123.val[0] = vaddq_s16(h00, h10);
-    h0123.val[2] = vaddq_s16(h01, h11);
-    h4567.val[0] = vaddq_s16(h02, h12);
-    h4567.val[2] = vaddq_s16(h03, h13);
-    h89.val[0] = vaddq_s16(h04, h14);
+    register int16x8_t h0 asm("q22") = h00;
+    register int16x8_t h1 asm("q23") = h13;
+    register int16x8_t h2 asm("q24") = h01;
+    register int16x8_t h3 asm("q25") = h14;
 
-    h4567.val[1] = vsubq_s16(h00, h10);
-    h4567.val[3] = vsubq_s16(h01, h11);
-    h89.val[1] = vsubq_s16(h02, h12);
-    h0123.val[1] = vsubq_s16(h03, h13);
-    h0123.val[3] = vsubq_s16(h04, h14);
+    asm ("st1	{v22.8h - v25.8h}, %[base]"
+        : [base] "=m" (* (int16_t (*)[4][8]) &flat[t][0][0])
+        : "w" (h0), "w" (h1), "w" (h2), "w" (h3));
 
-    vst1q_s16_x4(&flat[t][0][0], h0123);
-    vst1q_s16_x4(&flat[t][4][0], h4567);
-    vst1q_s16_x2(&flat[t][8][0], h89);
+    register int16x8_t h4 asm("q26") = h02;
+    register int16x8_t h5 asm("q27") = h10;
+    register int16x8_t h6 asm("q28") = h03;
+    register int16x8_t h7 asm("q29") = h11;
+
+    asm ("st1	{v26.8h - v29.8h}, %[base]"
+        : [base] "=m" (* (int16_t (*)[4][8]) &flat[t][4][0])
+        : "w" (h4), "w" (h5), "w" (h6), "w" (h7));
+
+    register int16x8_t h8 asm("q30") = h04;
+    register int16x8_t h9 asm("q31") = h12;
+
+    asm ("st1	{v30.8h - v31.8h}, %[base]"
+        : [base] "=m" (* (int16_t (*)[2][8]) &flat[t][8][0])
+        : "w" (h8), "w" (h9));
   }
 }
