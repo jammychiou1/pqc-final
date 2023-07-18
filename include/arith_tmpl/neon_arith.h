@@ -5,6 +5,18 @@
 #include <cstdint>
 
 template <int16_t MOD>
+constexpr static std::array<int16_t, 8> back_mod(std::array<int16_t, 8> vec) {
+  vec[7] = MOD;
+  return vec;
+}
+
+template <int16_t MOD>
+constexpr static std::array<int16_t, 8> back_red(std::array<int16_t, 8> vec) {
+  vec[7] = gen_bar<int16_t, MOD>(1);
+  return vec;
+}
+
+template <int16_t MOD>
 void barret_reduce(int16x8_t &v) {
   constexpr int16_t ONEBAR = gen_bar<int16_t, MOD>(1);
   int16x8_t esti = vqrdmulhq_n_s16(v, ONEBAR);
@@ -49,31 +61,31 @@ void barret_mls_const(int16x8_t &vd, int16x8_t v1) {
 }
 
 template <int16_t MOD, int LANE>
-int16x8_t barret_mul_laneq(int16x8_t v, int16x8_t coef, int16x8_t bar) {
+int16x8_t barret_mul_laneq(int16x8_t v, int16x8_t coef, int16x8_t bar, int16x8_t vec_mod) {
   int16x8_t esti = vqrdmulhq_laneq_s16(v, bar, LANE);
   int16x8_t res = vmulq_laneq_s16(v, coef, LANE);
-  res = vmlsq_n_s16(res, esti, MOD);
+  res = vmlsq_laneq_s16(res, esti, vec_mod, 7);
   return res;
 }
 
 template <int16_t MOD, int LANE>
-void barret_mla_laneq(int16x8_t &vd, int16x8_t v1, int16x8_t coef, int16x8_t bar) {
+void barret_mla_laneq(int16x8_t &vd, int16x8_t v1, int16x8_t coef, int16x8_t bar, int16x8_t vec_mod) {
   int16x8_t esti = vqrdmulhq_laneq_s16(v1, bar, LANE);
   vd = vmlaq_laneq_s16(vd, v1, coef, LANE);
-  vd = vmlsq_n_s16(vd, esti, MOD);
+  vd = vmlsq_laneq_s16(vd, esti, vec_mod, 7);
 }
 
 template <int16_t MOD, int LANE>
-void barret_mls_laneq(int16x8_t &vd, int16x8_t v1, int16x8_t coef, int16x8_t bar) {
+void barret_mls_laneq(int16x8_t &vd, int16x8_t v1, int16x8_t coef, int16x8_t bar, int16x8_t vec_mod) {
   int16x8_t esti = vqrdmulhq_laneq_s16(v1, bar, LANE);
   vd = vmlsq_laneq_s16(vd, v1, coef, LANE);
-  vd = vmlaq_n_s16(vd, esti, MOD);
+  vd = vmlaq_laneq_s16(vd, esti, vec_mod, 7);
 }
 
-template <int16_t MOD, int LANE>
-void barret_reduce_laneq(int16x8_t &v, int16x8_t bar) {
-  int16x8_t esti = vqrdmulhq_laneq_s16(v, bar, LANE);
-  v = vmlsq_n_s16(v, esti, MOD);
+template <int16_t MOD>
+void barret_reduce_laneq(int16x8_t &v, int16x8_t vec_red, int16x8_t vec_mod) {
+  int16x8_t esti = vqrdmulhq_laneq_s16(v, vec_red, 7);
+  v = vmlsq_laneq_s16(v, esti, vec_mod, 7);
 }
 
 #endif // NEON_ARITH_H

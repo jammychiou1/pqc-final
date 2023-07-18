@@ -13,17 +13,27 @@ constexpr int16_t W_4590 = 11;
 constexpr int16_t W_9 = gen_pow<int16_t, Q>(W_4590, ORD / 9);
 constexpr int16_t W_3 = gen_pow<int16_t, Q>(W_4590, ORD / 3);
 
-constexpr std::array<int16_t, 9> W_9S = gen_pows<int16_t, 9, Q>(W_9);
-constexpr std::array<int16_t, 3> W_3S = gen_pows<int16_t, 3, Q>(W_3);
+constexpr static std::array<int16_t, 9> W_9S = gen_pows<int16_t, 9, Q>(W_9);
+constexpr static std::array<int16_t, 3> W_3S = gen_pows<int16_t, 3, Q>(W_3);
 
-constexpr std::array<int16_t, 9> W_9_BARS = gen_bars<int16_t, 9, Q>(W_9S);
+constexpr static std::array<int16_t, 9> W_9_BARS = gen_bars<int16_t, 9, Q>(W_9S);
 
-constexpr std::array<std::array<std::pair<int16_t, int16_t>, 9>, 10> TWISTS = [] {
-  std::array<std::array<std::pair<int16_t, int16_t>, 9>, 10> res = {};
+
+constexpr static std::array<int16_t, 8> COEFS = {
+  W_3S[1], W_3S[2], W_9S[1], W_9S[2], W_9S[4]
+};
+constexpr static std::array<int16_t, 8> COEFS_MOD = back_mod<Q>(COEFS);
+constexpr static std::array<int16_t, 8> BARS = gen_bars<int16_t, 8, Q>(COEFS);
+constexpr static std::array<int16_t, 8> BARS_RED = back_red<Q>(BARS);
+
+constexpr static
+std::pair<std::array<std::array<int16_t, 8>, 10>, std::array<std::array<int16_t, 8>, 10>>
+TWISTS = [] {
+  std::pair<std::array<std::array<int16_t, 8>, 10>, std::array<std::array<int16_t, 8>, 10>> res = {};
   for (int i = 0; i < 10; i++) {
-    for (int j = 0; j < 9; j++) {
-      res[i][j].first = W_9S[i * j % 9];
-      res[i][j].second = W_9_BARS[i * j % 9];
+    for (int j = 1; j < 9; j++) {
+      res.first[i][j - 1] = W_9S[i * j % 9];
+      res.second[i][j - 1] = W_9_BARS[i * j % 9];
     }
   }
   return res;
@@ -33,14 +43,17 @@ inline void btrfly3(
     int16x8_t x0, int16x8_t x1, int16x8_t x2,
     int16x8_t &h0, int16x8_t &h1, int16x8_t &h2) {
 
+  int16x8_t coefs_mod = vld1q_s16(&COEFS_MOD[0]);
+  int16x8_t bars_red = vld1q_s16(&BARS_RED[0]);
+
   int16x8_t a02 = vaddq_s16(x0, x2);
   int16x8_t s02 = vsubq_s16(x0, x2);
   int16x8_t s12 = vsubq_s16(x1, x2);
 
   h0 = vaddq_s16(a02, x1);
-  h1 = barret_mul_const<Q, W_3S[1]>(s12);
+  h1 = barret_mul_laneq<Q, 0>(s12, coefs_mod, bars_red, coefs_mod);
   h1 = vaddq_s16(h1, s02);
-  h2 = barret_mul_const<Q, W_3S[2]>(s12);
+  h2 = barret_mul_laneq<Q, 1>(s12, coefs_mod, bars_red, coefs_mod);
   h2 = vaddq_s16(h2, s02);
 }
 
@@ -49,24 +62,27 @@ inline void five_nonezero(
     int16x8_t &h0, int16x8_t &h1, int16x8_t &h2, int16x8_t &h3, int16x8_t &h4,
     int16x8_t &h5, int16x8_t &h6, int16x8_t &h7, int16x8_t &h8) {
 
+  int16x8_t coefs_mod = vld1q_s16(&COEFS_MOD[0]);
+  int16x8_t bars_red = vld1q_s16(&BARS_RED[0]);
+
   int16x8_t a0 = vaddq_s16(x0, x3);
-  int16x8_t a1 = barret_mul_const<Q, W_3S[1]>(x3);
+  int16x8_t a1 = barret_mul_laneq<Q, 0>(x3, coefs_mod, bars_red, coefs_mod);
   int16x8_t a2 = vsubq_s16(x0, x3);
   a2 = vsubq_s16(a2, a1);
   a1 = vaddq_s16(a1, x0);
 
   int16x8_t b0 = vaddq_s16(x1, x4);
-  int16x8_t b1 = barret_mul_const<Q, W_3S[1]>(x4);
+  int16x8_t b1 = barret_mul_laneq<Q, 0>(x4, coefs_mod, bars_red, coefs_mod);
   int16x8_t b2 = vsubq_s16(x1, x4);
   b2 = vsubq_s16(b2, b1);
   b1 = vaddq_s16(b1, x1);
 
-  b1 = barret_mul_const<Q, W_9S[1]>(b1);
-  b2 = barret_mul_const<Q, W_9S[2]>(b2);
+  b1 = barret_mul_laneq<Q, 2>(b1, coefs_mod, bars_red, coefs_mod);
+  b2 = barret_mul_laneq<Q, 3>(b2, coefs_mod, bars_red, coefs_mod);
 
   int16x8_t c0 = x2;
-  int16x8_t c1 = barret_mul_const<Q, W_9S[2]>(x2);
-  int16x8_t c2 = barret_mul_const<Q, W_9S[4]>(x2);
+  int16x8_t c1 = barret_mul_laneq<Q, 3>(x2, coefs_mod, bars_red, coefs_mod);
+  int16x8_t c2 = barret_mul_laneq<Q, 4>(x2, coefs_mod, bars_red, coefs_mod);
 
   btrfly3(a0, b0, c0, h0, h3, h6);
   btrfly3(a1, b1, c1, h1, h4, h7);
@@ -74,8 +90,13 @@ inline void five_nonezero(
 }
 
 void ntt_9(int16_t ntt[9][2][10][8], const int16_t poly[800]) {
-
   for (int i = 0; i < 10; i++) {
+    int16x8_t coefs_mod = vld1q_s16(&COEFS_MOD[0]);
+    int16x8_t bars_red = vld1q_s16(&BARS_RED[0]);
+
+    int16x8_t twist_coefs = vld1q_s16(&TWISTS.first[i][0]);
+    int16x8_t twist_bars = vld1q_s16(&TWISTS.second[i][0]);
+
     {
       int16x8_t x0_fr = vld1q_s16(&poly[i * 16]);
       int16x8_t x1_fr = vld1q_s16(&poly[(10 + i) * 16]);
@@ -84,28 +105,36 @@ void ntt_9(int16_t ntt[9][2][10][8], const int16_t poly[800]) {
       int16x8_t x4_fr = vld1q_s16(&poly[(40 + i) * 16]);
 
       int16x8_t h0_fr, h1_fr, h2_fr, h3_fr, h4_fr, h5_fr, h6_fr, h7_fr, h8_fr;
+
       five_nonezero(x0_fr, x1_fr, x2_fr, x3_fr, x4_fr,
           h0_fr, h1_fr, h2_fr, h3_fr, h4_fr,
           h5_fr, h6_fr, h7_fr, h8_fr);
 
-      h0_fr = barret_mul<Q>(h0_fr, TWISTS[i][0].first, TWISTS[i][0].second);
-      h1_fr = barret_mul<Q>(h1_fr, TWISTS[i][1].first, TWISTS[i][1].second);
-      h2_fr = barret_mul<Q>(h2_fr, TWISTS[i][2].first, TWISTS[i][2].second);
-      h3_fr = barret_mul<Q>(h3_fr, TWISTS[i][3].first, TWISTS[i][3].second);
-      h4_fr = barret_mul<Q>(h4_fr, TWISTS[i][4].first, TWISTS[i][4].second);
-      h5_fr = barret_mul<Q>(h5_fr, TWISTS[i][5].first, TWISTS[i][5].second);
-      h6_fr = barret_mul<Q>(h6_fr, TWISTS[i][6].first, TWISTS[i][6].second);
-      h7_fr = barret_mul<Q>(h7_fr, TWISTS[i][7].first, TWISTS[i][7].second);
-      h8_fr = barret_mul<Q>(h8_fr, TWISTS[i][8].first, TWISTS[i][8].second);
-
+      barret_reduce_laneq<Q>(h0_fr, bars_red, coefs_mod);
       vst1q_s16(&ntt[0][0][i][0], h0_fr);
+
+      h1_fr = barret_mul_laneq<Q, 0>(h1_fr, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[1][0][i][0], h1_fr);
+
+      h2_fr = barret_mul_laneq<Q, 1>(h2_fr, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[2][0][i][0], h2_fr);
+
+      h3_fr = barret_mul_laneq<Q, 2>(h3_fr, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[3][0][i][0], h3_fr);
+
+      h4_fr = barret_mul_laneq<Q, 3>(h4_fr, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[4][0][i][0], h4_fr);
+
+      h5_fr = barret_mul_laneq<Q, 4>(h5_fr, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[5][0][i][0], h5_fr);
+
+      h6_fr = barret_mul_laneq<Q, 5>(h6_fr, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[6][0][i][0], h6_fr);
+
+      h7_fr = barret_mul_laneq<Q, 6>(h7_fr, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[7][0][i][0], h7_fr);
+
+      h8_fr = barret_mul_laneq<Q, 7>(h8_fr, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[8][0][i][0], h8_fr);
     }
 
@@ -117,30 +146,37 @@ void ntt_9(int16_t ntt[9][2][10][8], const int16_t poly[800]) {
       int16x8_t x4_bk = vld1q_s16(&poly[(40 + i) * 16 + 8]);
 
       int16x8_t h0_bk, h1_bk, h2_bk, h3_bk, h4_bk, h5_bk, h6_bk, h7_bk, h8_bk;
+
       five_nonezero(x0_bk, x1_bk, x2_bk, x3_bk, x4_bk,
           h0_bk, h1_bk, h2_bk, h3_bk, h4_bk,
           h5_bk, h6_bk, h7_bk, h8_bk);
 
-      h0_bk = barret_mul<Q>(h0_bk, TWISTS[i][0].first, TWISTS[i][0].second);
-      h1_bk = barret_mul<Q>(h1_bk, TWISTS[i][1].first, TWISTS[i][1].second);
-      h2_bk = barret_mul<Q>(h2_bk, TWISTS[i][2].first, TWISTS[i][2].second);
-      h3_bk = barret_mul<Q>(h3_bk, TWISTS[i][3].first, TWISTS[i][3].second);
-      h4_bk = barret_mul<Q>(h4_bk, TWISTS[i][4].first, TWISTS[i][4].second);
-      h5_bk = barret_mul<Q>(h5_bk, TWISTS[i][5].first, TWISTS[i][5].second);
-      h6_bk = barret_mul<Q>(h6_bk, TWISTS[i][6].first, TWISTS[i][6].second);
-      h7_bk = barret_mul<Q>(h7_bk, TWISTS[i][7].first, TWISTS[i][7].second);
-      h8_bk = barret_mul<Q>(h8_bk, TWISTS[i][8].first, TWISTS[i][8].second);
-
+      barret_reduce_laneq<Q>(h0_bk, bars_red, coefs_mod);
       vst1q_s16(&ntt[0][1][i][0], h0_bk);
+
+      h1_bk = barret_mul_laneq<Q, 0>(h1_bk, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[1][1][i][0], h1_bk);
+
+      h2_bk = barret_mul_laneq<Q, 1>(h2_bk, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[2][1][i][0], h2_bk);
+
+      h3_bk = barret_mul_laneq<Q, 2>(h3_bk, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[3][1][i][0], h3_bk);
+
+      h4_bk = barret_mul_laneq<Q, 3>(h4_bk, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[4][1][i][0], h4_bk);
+
+      h5_bk = barret_mul_laneq<Q, 4>(h5_bk, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[5][1][i][0], h5_bk);
+
+      h6_bk = barret_mul_laneq<Q, 5>(h6_bk, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[6][1][i][0], h6_bk);
+
+      h7_bk = barret_mul_laneq<Q, 6>(h7_bk, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[7][1][i][0], h7_bk);
+
+      h8_bk = barret_mul_laneq<Q, 7>(h8_bk, twist_coefs, twist_bars, coefs_mod);
       vst1q_s16(&ntt[8][1][i][0], h8_bk);
     }
   }
-
 }

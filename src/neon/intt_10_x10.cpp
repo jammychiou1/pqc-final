@@ -8,17 +8,17 @@
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
 
-constexpr static std::array<int16_t, 8> coefs = {
+constexpr static std::array<int16_t, 8> COEFS = {
   -502, // -(W_5 + W_5^4)
   459, // W_5 - W_5^4
   503, // -(W_5^2 + W_5^3)
   868, // W_5^2 - W_5^3
   -1327, // W_5 + W_5^2 - W_5^3 - W_5^4
   -2,
-  1
 };
-
-constexpr static std::array<int16_t, 8> bars = gen_bars<int16_t, 8, Q>(coefs);
+constexpr static std::array<int16_t, 8> COEFS_MOD = back_mod<Q>(COEFS);
+constexpr static std::array<int16_t, 8> BARS = gen_bars<int16_t, 8, Q>(COEFS);
+constexpr static std::array<int16_t, 8> BARS_RED = back_red<Q>(BARS);
 
 inline void btrfly2_inplace(int16x8_t &x0, int16x8_t &x1) {
   int16x8_t tmp = vsubq_s16(x0, x1);
@@ -29,8 +29,8 @@ inline void btrfly2_inplace(int16x8_t &x0, int16x8_t &x1) {
 inline void btrfly5_xn2(int16x8_t x0, int16x8_t x1, int16x8_t x2, int16x8_t x3, int16x8_t x4,
     int16x8_t &h0, int16x8_t &h1, int16x8_t &h2, int16x8_t &h3, int16x8_t &h4) {
 
-  int16x8_t coef_vec = vld1q_s16(&coefs[0]);
-  int16x8_t bar_vec = vld1q_s16(&bars[0]);
+  int16x8_t coefs_mod = vld1q_s16(&COEFS_MOD[0]);
+  int16x8_t bars_red = vld1q_s16(&BARS_RED[0]);
 
   int16x8_t a14 = vaddq_s16(x1, x4);
   int16x8_t s14 = vsubq_s16(x1, x4);
@@ -42,18 +42,18 @@ inline void btrfly5_xn2(int16x8_t x0, int16x8_t x1, int16x8_t x2, int16x8_t x3, 
   int16x8_t as = vaddq_s16(s14, s32);
 
   h0 = vaddq_s16(x0, aa);
-  h0 = barret_mul_laneq<Q, 5>(h0, coef_vec, bar_vec);
+  h0 = barret_mul_laneq<Q, 5>(h0, coefs_mod, bars_red, coefs_mod);
 
-  int16x8_t nc0 = barret_mul_laneq<Q, 0>(a14, coef_vec, bar_vec);
-  barret_mla_laneq<Q, 2>(nc0, a32, coef_vec, bar_vec);
+  int16x8_t nc0 = barret_mul_laneq<Q, 0>(a14, coefs_mod, bars_red, coefs_mod);
+  barret_mla_laneq<Q, 2>(nc0, a32, coefs_mod, bars_red, coefs_mod);
   int16x8_t nc1 = vsubq_s16(aa, nc0);
-  barret_reduce_laneq<Q, 6>(nc1, bar_vec);
+  barret_reduce_laneq<Q>(nc1, bars_red, coefs_mod);
 
-  s14 = barret_mul_laneq<Q, 1>(s14, coef_vec, bar_vec);
-  s32 = barret_mul_laneq<Q, 3>(s32, coef_vec, bar_vec);
+  s14 = barret_mul_laneq<Q, 1>(s14, coefs_mod, bars_red, coefs_mod);
+  s32 = barret_mul_laneq<Q, 3>(s32, coefs_mod, bars_red, coefs_mod);
   int16x8_t nn0 = vsubq_s16(s32, s14);
   int16x8_t nn1 = vaddq_s16(s32, s14);
-  barret_mla_laneq<Q, 4>(nn1, as, coef_vec, bar_vec);
+  barret_mla_laneq<Q, 4>(nn1, as, coefs_mod, bars_red, coefs_mod);
 
   h1 = vaddq_s16(nc0, nn0);
   h2 = vaddq_s16(nc1, nn1);
