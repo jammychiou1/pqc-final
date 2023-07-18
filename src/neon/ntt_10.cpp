@@ -14,11 +14,11 @@ constexpr int16_t W_4590 = 11;
 constexpr int16_t W_5 = gen_pow<int16_t, Q>(W_4590, ORD / 5);
 constexpr std::array<int16_t, 17> W_5S = gen_pows<int16_t, 17, Q>(W_5);
 
-constexpr int16_t K1 = -502;
-constexpr int16_t K2 = 459;
-constexpr int16_t K3 = 503;
-constexpr int16_t K4 = 868;
-constexpr int16_t K5 = -1327;
+constexpr int16_t K1 = -502; // -(W_5 + W_5^4)
+constexpr int16_t K2 = 459; // W_5 - W_5^4
+constexpr int16_t K3 = 503; // -(W_5^2 + W_5^3)
+constexpr int16_t K4 = 868; // W_5^2 - W_5^3
+constexpr int16_t K5 = -1327; // W_5 + W_5^2 - W_5^3 - W_5^4
 
 inline void btrfly5_xn2(int16x8_t x0, int16x8_t x1, int16x8_t x2, int16x8_t x3, int16x8_t x4,
     int16x8_t &h0, int16x8_t &h1, int16x8_t &h2, int16x8_t &h3, int16x8_t &h4) {
