@@ -48,4 +48,32 @@ void barret_mls_const(int16x8_t &vd, int16x8_t v1) {
   barret_mls<MOD>(vd, v1, COEF, gen_bar<int16_t, MOD>(COEF));
 }
 
+template <int16_t MOD, int LANE>
+int16x8_t barret_mul_laneq(int16x8_t v, int16x8_t coef, int16x8_t bar) {
+  int16x8_t esti = vqrdmulhq_laneq_s16(v, bar, LANE);
+  int16x8_t res = vmulq_laneq_s16(v, coef, LANE);
+  res = vmlsq_n_s16(res, esti, MOD);
+  return res;
+}
+
+template <int16_t MOD, int LANE>
+void barret_mla_laneq(int16x8_t &vd, int16x8_t v1, int16x8_t coef, int16x8_t bar) {
+  int16x8_t esti = vqrdmulhq_laneq_s16(v1, bar, LANE);
+  vd = vmlaq_laneq_s16(vd, v1, coef, LANE);
+  vd = vmlsq_n_s16(vd, esti, MOD);
+}
+
+template <int16_t MOD, int LANE>
+void barret_mls_laneq(int16x8_t &vd, int16x8_t v1, int16x8_t coef, int16x8_t bar) {
+  int16x8_t esti = vqrdmulhq_laneq_s16(v1, bar, LANE);
+  vd = vmlsq_laneq_s16(vd, v1, coef, LANE);
+  vd = vmlaq_n_s16(vd, esti, MOD);
+}
+
+template <int16_t MOD, int LANE>
+void barret_reduce_laneq(int16x8_t &v, int16x8_t bar) {
+  int16x8_t esti = vqrdmulhq_laneq_s16(v, bar, LANE);
+  v = vmlsq_n_s16(v, esti, MOD);
+}
+
 #endif // NEON_ARITH_H

@@ -8,17 +8,29 @@
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
 
-constexpr int ORD = 4590;
-constexpr int16_t W_4590 = 11;
+// constexpr int ORD = 4590;
+// constexpr int16_t W_4590 = 11;
 
-constexpr int16_t W_5 = gen_pow<int16_t, Q>(W_4590, ORD / 5);
-constexpr std::array<int16_t, 17> W_5S = gen_pows<int16_t, 17, Q>(W_5);
+// constexpr int16_t W_5 = gen_pow<int16_t, Q>(W_4590, ORD / 5);
+// constexpr std::array<int16_t, 17> W_5S = gen_pows<int16_t, 17, Q>(W_5);
 
-constexpr int16_t K1 = -502; // -(W_5 + W_5^4)
-constexpr int16_t K2 = 459; // W_5 - W_5^4
-constexpr int16_t K3 = 503; // -(W_5^2 + W_5^3)
-constexpr int16_t K4 = 868; // W_5^2 - W_5^3
-constexpr int16_t K5 = -1327; // W_5 + W_5^2 - W_5^3 - W_5^4
+// constexpr int16_t K1 = -502; // -(W_5 + W_5^4)
+// constexpr int16_t K2 = 459; // W_5 - W_5^4
+// constexpr int16_t K3 = 503; // -(W_5^2 + W_5^3)
+// constexpr int16_t K4 = 868; // W_5^2 - W_5^3
+// constexpr int16_t K5 = -1327; // W_5 + W_5^2 - W_5^3 - W_5^4
+
+constexpr static std::array<int16_t, 8> coefs = {
+  -502, // -(W_5 + W_5^4)
+  459, // W_5 - W_5^4
+  503, // -(W_5^2 + W_5^3)
+  868, // W_5^2 - W_5^3
+  -1327, // W_5 + W_5^2 - W_5^3 - W_5^4
+  -2,
+  1
+};
+
+constexpr static std::array<int16_t, 8> bars = gen_bars<int16_t, 8, Q>(coefs);
 
 inline void btrfly2_inplace(int16x8_t &x0, int16x8_t &x1) {
   int16x8_t tmp = vsubq_s16(x0, x1);
@@ -28,6 +40,9 @@ inline void btrfly2_inplace(int16x8_t &x0, int16x8_t &x1) {
 
 inline void btrfly5_xn2(int16x8_t x0, int16x8_t x1, int16x8_t x2, int16x8_t x3, int16x8_t x4,
     int16x8_t &h0, int16x8_t &h1, int16x8_t &h2, int16x8_t &h3, int16x8_t &h4) {
+
+  int16x8_t coef_vec = vld1q_s16(&coefs[0]);
+  int16x8_t bar_vec = vld1q_s16(&bars[0]);
 
   int16x8_t a14 = vaddq_s16(x1, x4);
   int16x8_t s14 = vsubq_s16(x1, x4);
@@ -39,18 +54,18 @@ inline void btrfly5_xn2(int16x8_t x0, int16x8_t x1, int16x8_t x2, int16x8_t x3, 
   int16x8_t as = vaddq_s16(s14, s32);
 
   h0 = vaddq_s16(x0, aa);
-  h0 = barret_mul_const<Q, -2>(h0);
+  h0 = barret_mul_laneq<Q, 5>(h0, coef_vec, bar_vec);
 
-  int16x8_t nc0 = barret_mul_const<Q, K1>(a14);
-  barret_mla_const<Q, K3>(nc0, a32);
+  int16x8_t nc0 = barret_mul_laneq<Q, 0>(a14, coef_vec, bar_vec);
+  barret_mla_laneq<Q, 2>(nc0, a32, coef_vec, bar_vec);
   int16x8_t nc1 = vsubq_s16(aa, nc0);
-  barret_reduce<Q>(nc1);
+  barret_reduce_laneq<Q, 6>(nc1, bar_vec);
 
-  s14 = barret_mul_const<Q, K2>(s14);
-  s32 = barret_mul_const<Q, K4>(s32);
+  s14 = barret_mul_laneq<Q, 1>(s14, coef_vec, bar_vec);
+  s32 = barret_mul_laneq<Q, 3>(s32, coef_vec, bar_vec);
   int16x8_t nn0 = vsubq_s16(s32, s14);
   int16x8_t nn1 = vaddq_s16(s32, s14);
-  barret_mla_const<Q, K5>(nn1, as);
+  barret_mla_laneq<Q, 4>(nn1, as, coef_vec, bar_vec);
 
   h1 = vaddq_s16(nc0, nn0);
   h2 = vaddq_s16(nc1, nn1);
