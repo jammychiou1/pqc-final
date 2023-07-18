@@ -90,7 +90,7 @@ void ntt_10(int16_t ntt[9][2][10][8]) {
     register int16x8_t h2 asm("q24") = h01;
     register int16x8_t h3 asm("q25") = h14;
 
-    asm ("st1	{v22.8h - v25.8h}, %[base]"
+    asm ("st1 {v22.8h - v25.8h}, %[base]"
         : [base] "=m" (* (int16_t (*)[4][8]) &flat[t][0][0])
         : "w" (h0), "w" (h1), "w" (h2), "w" (h3));
 
@@ -99,14 +99,14 @@ void ntt_10(int16_t ntt[9][2][10][8]) {
     register int16x8_t h6 asm("q28") = h03;
     register int16x8_t h7 asm("q29") = h11;
 
-    asm ("st1	{v26.8h - v29.8h}, %[base]"
+    asm ("st1 {v26.8h - v29.8h}, %[base]"
         : [base] "=m" (* (int16_t (*)[4][8]) &flat[t][4][0])
         : "w" (h4), "w" (h5), "w" (h6), "w" (h7));
 
     register int16x8_t h8 asm("q30") = h04;
     register int16x8_t h9 asm("q31") = h12;
 
-    asm ("st1	{v30.8h - v31.8h}, %[base]"
+    asm ("st1 {v30.8h - v31.8h}, %[base]"
         : [base] "=m" (* (int16_t (*)[2][8]) &flat[t][8][0])
         : "w" (h8), "w" (h9));
   }
