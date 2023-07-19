@@ -19,30 +19,9 @@ void forward(const int16_t in_poly[], int16_t out_ntt[9][2][10][8]) {
   ntt_10(out_ntt);
 }
 
-constexpr int16_t INV90 = -51;
-void div90_main(int16_t main_poly[1440]) {
-  int16x8_t zeros = vdupq_n_s16(0);
-  for (int i = 0; i < 1440; i += 8) {
-    int16x8_t chunk = vld1q_s16(&main_poly[i]);
-    chunk = barret_mul_const<Q, INV90>(chunk);
-    vst1q_s16(&main_poly[i], chunk);
-  }
-}
-
-constexpr int16_t INV360 = 1135;
-void div360_main(int16_t main_poly[1440]) {
-  int16x8_t zeros = vdupq_n_s16(0);
-  for (int i = 0; i < 1440; i += 8) {
-    int16x8_t chunk = vld1q_s16(&main_poly[i]);
-    chunk = barret_mul_const<Q, INV360>(chunk);
-    vst1q_s16(&main_poly[i], chunk);
-  }
-}
-
 void backward(int16_t in_ntt[9][2][10][8], int16_t out_main[1440]) {
   intt_10_x10(in_ntt);
   intt_9_x9(in_ntt, out_main);
-  // div360_main(out_main);
 }
 
 // main_poly length must >= 1448
@@ -99,10 +78,6 @@ void center_poly(int16_t poly[]) {
   for (int i = 0; i < 768; i += 8 * 4) {
     int16x8x4_t chunks = vld1q_s16_x4(&poly[i]);
 
-    // barret_reduce<Q>(chunks.val[0]);
-    // barret_reduce<Q>(chunks.val[1]);
-    // barret_reduce<Q>(chunks.val[2]);
-    // barret_reduce<Q>(chunks.val[3]);
     chunks.val[0] = barret_mul_const<Q, -INV720>(chunks.val[0]);
     chunks.val[1] = barret_mul_const<Q, -INV720>(chunks.val[1]);
     chunks.val[2] = barret_mul_const<Q, -INV720>(chunks.val[2]);
