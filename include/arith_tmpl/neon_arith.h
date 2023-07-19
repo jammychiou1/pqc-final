@@ -2,18 +2,23 @@
 #define NEON_ARITH_H
 
 #include <arm_neon.h>
+#include <array>
 #include <cstdint>
 
 template <int16_t MOD>
-constexpr static std::array<int16_t, 8> back_mod(std::array<int16_t, 8> vec) {
+constexpr std::array<int16_t, 8> back_mod(std::array<int16_t, 8> vec) {
   vec[7] = MOD;
   return vec;
 }
 
 template <int16_t MOD>
-constexpr static std::array<int16_t, 8> back_red(std::array<int16_t, 8> vec) {
+constexpr std::array<int16_t, 8> back_red(std::array<int16_t, 8> vec) {
   vec[7] = gen_bar<int16_t, MOD>(1);
   return vec;
+}
+
+constexpr int16x8_t arr_to_x8_t(std::array<int16_t, 8> arr) {
+  return int16x8_t{arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7]};
 }
 
 template <int16_t MOD>
