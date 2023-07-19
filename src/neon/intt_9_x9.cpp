@@ -16,6 +16,14 @@ constexpr int16_t W_3 = gen_pow<int16_t, Q>(W_4590, ORD / 3);
 constexpr std::array<int16_t, 17> W_9S = gen_pows<int16_t, 17, Q>(W_9);
 constexpr std::array<int16_t, 5> W_3S = gen_pows<int16_t, 5, Q>(W_3);
 
+constexpr static std::array<int16_t, 8> COEFS = {
+  W_3S[1], W_3S[2], W_9S[1], W_9S[2], W_9S[4]
+};
+constexpr static std::array<int16_t, 8> COEFS_MOD = back_mod<Q>(COEFS);
+constexpr static std::array<int16_t, 8> BARS = gen_bars<int16_t, 8, Q>(COEFS);
+constexpr static std::array<int16_t, 8> BARS_RED = back_red<Q>(BARS);
+
+
 inline void btrfly3(
     int16x8_t x0, int16x8_t x1, int16x8_t x2,
     int16x8_t &h0, int16x8_t &h1, int16x8_t &h2) {
@@ -24,10 +32,13 @@ inline void btrfly3(
   int16x8_t s02 = vsubq_s16(x0, x2);
   int16x8_t s12 = vsubq_s16(x1, x2);
 
+  int16x8_t coefs_mod = vld1q_s16(&COEFS_MOD[0]);
+  int16x8_t bars_red = vld1q_s16(&BARS_RED[0]);
+
   h0 = vaddq_s16(a02, x1);
-  h1 = barret_mul_const<Q, W_3S[1]>(s12);
+  h1 = barret_mul_laneq<Q, 0>(s12, coefs_mod, bars_red, coefs_mod);
   h1 = vaddq_s16(h1, s02);
-  h2 = barret_mul_const<Q, W_3S[2]>(s12);
+  h2 = barret_mul_laneq<Q, 1>(s12, coefs_mod, bars_red, coefs_mod);
   h2 = vaddq_s16(h2, s02);
 }
 
@@ -36,6 +47,9 @@ inline void btrfly9(
     int16x8_t x5, int16x8_t x6, int16x8_t x7, int16x8_t x8,
     int16x8_t &h0, int16x8_t &h1, int16x8_t &h2, int16x8_t &h3, int16x8_t &h4,
     int16x8_t &h5, int16x8_t &h6, int16x8_t &h7, int16x8_t &h8) {
+
+  int16x8_t coefs_mod = vld1q_s16(&COEFS_MOD[0]);
+  int16x8_t bars_red = vld1q_s16(&BARS_RED[0]);
 
   int16x8_t a0, a1, a2;
   btrfly3(x0, x3, x6, a0, a1, a2);
@@ -46,15 +60,15 @@ inline void btrfly9(
   int16x8_t c0, c1, c2;
   btrfly3(x2, x5, x8, c0, c1, c2);
 
-  barret_reduce<Q>(a0);
-  barret_reduce<Q>(a1);
-  barret_reduce<Q>(a2);
-  barret_reduce<Q>(b0);
-  b1 = barret_mul_const<Q, W_9S[1]>(b1);
-  b2 = barret_mul_const<Q, W_9S[2]>(b2);
-  barret_reduce<Q>(c0);
-  c1 = barret_mul_const<Q, W_9S[2]>(c1);
-  c2 = barret_mul_const<Q, W_9S[4]>(c2);
+  barret_reduce_laneq<Q>(a0, bars_red, coefs_mod);
+  barret_reduce_laneq<Q>(a1, bars_red, coefs_mod);
+  barret_reduce_laneq<Q>(a2, bars_red, coefs_mod);
+  barret_reduce_laneq<Q>(b0, bars_red, coefs_mod);
+  b1 = barret_mul_laneq<Q, 2>(b1, coefs_mod, bars_red, coefs_mod);
+  b2 = barret_mul_laneq<Q, 3>(b2, coefs_mod, bars_red, coefs_mod);
+  barret_reduce_laneq<Q>(c0, bars_red, coefs_mod);
+  c1 = barret_mul_laneq<Q, 3>(c1, coefs_mod, bars_red, coefs_mod);
+  c2 = barret_mul_laneq<Q, 4>(c2, coefs_mod, bars_red, coefs_mod);
 
   btrfly3(a0, b0, c0, h0, h3, h6);
   btrfly3(a1, b1, c1, h1, h4, h7);
@@ -63,6 +77,9 @@ inline void btrfly9(
 
 
 void intt_9_x9(int16_t ntt[9][2][10][8], int16_t poly[1440]) {
+
+  int16x8_t coefs_mod = vld1q_s16(&COEFS_MOD[0]);
+  int16x8_t bars_red = vld1q_s16(&BARS_RED[0]);
 
   for (int i = 0; i < 10; i++) {
     {
@@ -76,15 +93,15 @@ void intt_9_x9(int16_t ntt[9][2][10][8], int16_t poly[1440]) {
       int16x8_t x7_fr = vld1q_s16(&ntt[2][0][i][0]);
       int16x8_t x8_fr = vld1q_s16(&ntt[1][0][i][0]);
 
-      barret_reduce<Q>(x0_fr);
-      barret_reduce<Q>(x1_fr);
-      barret_reduce<Q>(x2_fr);
-      barret_reduce<Q>(x3_fr);
-      barret_reduce<Q>(x4_fr);
-      barret_reduce<Q>(x5_fr);
-      barret_reduce<Q>(x6_fr);
-      barret_reduce<Q>(x7_fr);
-      barret_reduce<Q>(x8_fr);
+      barret_reduce_laneq<Q>(x0_fr, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x1_fr, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x2_fr, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x3_fr, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x4_fr, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x5_fr, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x6_fr, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x7_fr, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x8_fr, bars_red, coefs_mod);
 
       int16x8_t h0_fr, h1_fr, h2_fr, h3_fr, h4_fr, h5_fr, h6_fr, h7_fr, h8_fr;
 
@@ -115,15 +132,15 @@ void intt_9_x9(int16_t ntt[9][2][10][8], int16_t poly[1440]) {
       int16x8_t x7_bk = vld1q_s16(&ntt[2][1][i][0]);
       int16x8_t x8_bk = vld1q_s16(&ntt[1][1][i][0]);
 
-      barret_reduce<Q>(x0_bk);
-      barret_reduce<Q>(x1_bk);
-      barret_reduce<Q>(x2_bk);
-      barret_reduce<Q>(x3_bk);
-      barret_reduce<Q>(x4_bk);
-      barret_reduce<Q>(x5_bk);
-      barret_reduce<Q>(x6_bk);
-      barret_reduce<Q>(x7_bk);
-      barret_reduce<Q>(x8_bk);
+      barret_reduce_laneq<Q>(x0_bk, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x1_bk, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x2_bk, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x3_bk, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x4_bk, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x5_bk, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x6_bk, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x7_bk, bars_red, coefs_mod);
+      barret_reduce_laneq<Q>(x8_bk, bars_red, coefs_mod);
 
       int16x8_t h0_bk, h1_bk, h2_bk, h3_bk, h4_bk, h5_bk, h6_bk, h7_bk, h8_bk;
 
