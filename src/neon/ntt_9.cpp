@@ -102,12 +102,19 @@ void ntt_9(int16_t ntt[9][2][10][8], const int16_t poly[800]) {
     int16x8_t twist_coefs = vld1q_s16(&TWISTS.first[i][0]);
     int16x8_t twist_bars = vld1q_s16(&TWISTS.second[i][0]);
 
+    int16x8x2_t x0 = vld1q_s16_x2(&poly[i * 16]);
+    int16x8x2_t x1 = vld1q_s16_x2(&poly[(10 + i) * 16]);
+    // int16x8x2_t x2 = vld1q_s16_x2(&poly[(20 + i) * 16]);
+    int16x8x2_t x3 = vld1q_s16_x2(&poly[(30 + i) * 16]);
+    int16x8x2_t x4 = vld1q_s16_x2(&poly[(40 + i) * 16]);
+
     {
-      int16x8_t x0_fr = vld1q_s16(&poly[i * 16]);
-      int16x8_t x1_fr = vld1q_s16(&poly[(10 + i) * 16]);
+      int16x8_t x0_fr = x0.val[0];
+      int16x8_t x1_fr = x1.val[0];
+      // int16x8_t x2_fr = x2.val[0];
       int16x8_t x2_fr = vld1q_s16(&poly[(20 + i) * 16]);
-      int16x8_t x3_fr = vld1q_s16(&poly[(30 + i) * 16]);
-      int16x8_t x4_fr = vld1q_s16(&poly[(40 + i) * 16]);
+      int16x8_t x3_fr = x3.val[0];
+      int16x8_t x4_fr = x4.val[0];
 
       int16x8_t h0_fr, h1_fr, h2_fr, h3_fr, h4_fr, h5_fr, h6_fr, h7_fr, h8_fr;
 
@@ -144,11 +151,12 @@ void ntt_9(int16_t ntt[9][2][10][8], const int16_t poly[800]) {
     }
 
     {
-      int16x8_t x0_bk = vld1q_s16(&poly[i * 16 + 8]);
-      int16x8_t x1_bk = vld1q_s16(&poly[(10 + i) * 16 + 8]);
+      int16x8_t x0_bk = x0.val[1];
+      int16x8_t x1_bk = x1.val[1];
+      // int16x8_t x2_bk = x2.val[1];
       int16x8_t x2_bk = vld1q_s16(&poly[(20 + i) * 16 + 8]);
-      int16x8_t x3_bk = vld1q_s16(&poly[(30 + i) * 16 + 8]);
-      int16x8_t x4_bk = vld1q_s16(&poly[(40 + i) * 16 + 8]);
+      int16x8_t x3_bk = x3.val[1];
+      int16x8_t x4_bk = x4.val[1];
 
       int16x8_t h0_bk, h1_bk, h2_bk, h3_bk, h4_bk, h5_bk, h6_bk, h7_bk, h8_bk;
 
