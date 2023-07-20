@@ -45,6 +45,14 @@ int16x8_t barret_mul_laneq_opaque(int16x8_t v, int16x8_t coef, int16x8_t bar, in
   return res;
 }
 
+template <int16_t MOD, int LANEC, int LANEB, int LANEM>
+int16x8_t barret_mul_laneq_mix_opaque(int16x8_t v, int16x8_t coef_bar) {
+  int16x8_t esti = vqrdmulhq_laneq_s16_opaque<LANEB>(v, coef_bar);
+  int16x8_t res = vmulq_laneq_s16_opaque<LANEC>(v, coef_bar);
+  vmlsq_laneq_s16_opaque<LANEM>(res, esti, coef_bar);
+  return res;
+}
+
 template <int16_t MOD, int LANE>
 void barret_mla_laneq_opaque(int16x8_t &vd, int16x8_t v1, int16x8_t coef, int16x8_t bar, int16x8_t vec_mod) {
   int16x8_t esti = vqrdmulhq_laneq_s16_opaque<LANE>(v1, bar);
@@ -63,6 +71,14 @@ template <int16_t MOD>
 void barret_reduce_laneq_opaque(int16x8_t &v, int16x8_t vec_red, int16x8_t vec_mod) {
   int16x8_t esti = vqrdmulhq_laneq_s16_opaque<7>(v, vec_red);
   vmlsq_laneq_s16_opaque<7>(v, esti, vec_mod);
+}
+
+template <int16_t MOD, int LANE>
+int16x8_t barret_mul_2_laneq_opaque(int16x8_t v, int16x8_t coef, int16x8_t bar, int16x8_t vec_mod) {
+  int16x8_t esti = vqrdmulhq_laneq_s16_opaque<LANE>(v, bar);
+  int16x8_t res = vshlq_n_s16(v, 1);
+  vmlsq_laneq_s16_opaque<7>(res, esti, vec_mod);
+  return res;
 }
 
 template <int16_t MOD, int LANE>
