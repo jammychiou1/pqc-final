@@ -65,4 +65,12 @@ void barret_reduce_laneq_opaque(int16x8_t &v, int16x8_t vec_red, int16x8_t vec_m
   vmlsq_laneq_s16_opaque<7>(v, esti, vec_mod);
 }
 
+template <int16_t MOD, int LANE>
+int16x8_t barret_mul_n2_laneq_opaque(int16x8_t v, int16x8_t coef, int16x8_t bar, int16x8_t vec_mod) {
+  int16x8_t esti = vqrdmulhq_laneq_s16_opaque<LANE>(v, bar);
+  int16x8_t res = vshlq_n_s16(vnegq_s16(v), 1);
+  vmlsq_laneq_s16_opaque<7>(res, esti, vec_mod);
+  return res;
+}
+
 #endif // NEON_ARITH_OPAQUE_H

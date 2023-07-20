@@ -43,7 +43,7 @@ inline void btrfly5_xn2(int16x8_t x0, int16x8_t x1, int16x8_t x2, int16x8_t x3, 
   int16x8_t as = vaddq_s16(s14, s32);
 
   h0 = vaddq_s16(x0, aa);
-  h0 = barret_mul_laneq_opaque<Q, 5>(h0, coefs_mod, bars_red, coefs_mod);
+  h0 = barret_mul_n2_laneq_opaque<Q, 5>(h0, coefs_mod, bars_red, coefs_mod);
 
   int16x8_t nc0 = barret_mul_laneq_opaque<Q, 0>(a14, coefs_mod, bars_red, coefs_mod);
   barret_mla_laneq_opaque<Q, 2>(nc0, a32, coefs_mod, bars_red, coefs_mod);
