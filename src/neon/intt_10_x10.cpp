@@ -14,7 +14,7 @@ constexpr static std::array<int16_t, 8> COEFS = {
   459, // W_5 - W_5^4
   503, // -(W_5^2 + W_5^3)
   868, // W_5^2 - W_5^3
-  -1327, // W_5 + W_5^2 - W_5^3 - W_5^4
+  -1327, // -(W_5 + W_5^2 - W_5^3 - W_5^4)
   -2,
 };
 constexpr static std::array<int16_t, 8> COEFS_MOD = back_mod<Q>(COEFS);
