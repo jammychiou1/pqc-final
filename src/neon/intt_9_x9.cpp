@@ -62,13 +62,13 @@ inline void btrfly9(
   int16x8_t c0, c1, c2;
   btrfly3(x2, x5, x8, c0, c1, c2);
 
-  barret_reduce_laneq_opaque<Q>(a0, bars_red, coefs_mod);
-  barret_reduce_laneq_opaque<Q>(a1, bars_red, coefs_mod);
-  barret_reduce_laneq_opaque<Q>(a2, bars_red, coefs_mod);
-  barret_reduce_laneq_opaque<Q>(b0, bars_red, coefs_mod);
+  barret_crude_reduce_laneq_opaque<Q>(a0, bars_red, coefs_mod);
+  barret_crude_reduce_laneq_opaque<Q>(a1, bars_red, coefs_mod);
+  barret_crude_reduce_laneq_opaque<Q>(a2, bars_red, coefs_mod);
+  barret_crude_reduce_laneq_opaque<Q>(b0, bars_red, coefs_mod);
   b1 = barret_mul_laneq_opaque<Q, 2>(b1, coefs_mod, bars_red, coefs_mod);
   b2 = barret_mul_laneq_opaque<Q, 3>(b2, coefs_mod, bars_red, coefs_mod);
-  barret_reduce_laneq_opaque<Q>(c0, bars_red, coefs_mod);
+  barret_crude_reduce_laneq_opaque<Q>(c0, bars_red, coefs_mod);
   c1 = barret_mul_laneq_opaque<Q, 3>(c1, coefs_mod, bars_red, coefs_mod);
   c2 = barret_mul_laneq_opaque<Q, 4>(c2, coefs_mod, bars_red, coefs_mod);
 
