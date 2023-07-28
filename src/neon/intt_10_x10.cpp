@@ -8,6 +8,7 @@
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
 #include "arith_tmpl/neon_arith_opaque.h"
+#include "arith_tmpl/reduce_tbl.h"
 
 constexpr static std::array<int16_t, 8> COEFS = {
   -502, // -(W_5 + W_5^4)
@@ -48,7 +49,8 @@ inline void btrfly5_xn2(int16x8_t x0, int16x8_t x1, int16x8_t x2, int16x8_t x3, 
   int16x8_t nc0 = barret_mul_laneq_opaque<Q, 0>(a14, coefs_mod, bars_red, coefs_mod);
   barret_mla_laneq_opaque<Q, 2>(nc0, a32, coefs_mod, bars_red, coefs_mod);
   int16x8_t nc1 = vsubq_s16(aa, nc0);
-  barret_reduce_laneq_opaque<Q>(nc1, bars_red, coefs_mod);
+  // barret_reduce_laneq_opaque<Q>(nc1, bars_red, coefs_mod);
+  reduce_tbl(nc1);
 
   s14 = barret_mul_laneq_opaque<Q, 1>(s14, coefs_mod, bars_red, coefs_mod);
   s32 = barret_mul_laneq_opaque<Q, 3>(s32, coefs_mod, bars_red, coefs_mod);

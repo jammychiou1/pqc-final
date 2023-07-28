@@ -8,6 +8,7 @@
 #include "arith_tmpl/gen_const.h"
 #include "arith_tmpl/neon_arith.h"
 #include "arith_tmpl/neon_arith_opaque.h"
+#include "arith_tmpl/reduce_tbl.h"
 
 constexpr int ORD = 4590;
 constexpr int16_t W_4590 = 11;
