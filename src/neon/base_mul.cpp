@@ -20,15 +20,15 @@ constexpr int16_t W_9 = gen_pow<int16_t, Q>(W_4590, ORD / 9);
 constexpr std::array<int16_t, 10> W_10S = gen_pows<int16_t, 10, Q>(W_10);
 constexpr std::array<int16_t, 17> W_9S = gen_pows<int16_t, 17, Q>(W_9);
 
-constexpr static std::array<std::array<int32_t, 9>, 10> TWIDDLES = [] {
-  std::array<std::array<int32_t, 9>, 10> res = {};
-  for (int i = 0; i < 10; i++) {
-    for (int j = 0; j < 9; j++) {
+constexpr static std::array<std::array<int32_t, 10>, 9> TWIDDLES = [] {
+  std::array<std::array<int32_t, 10>, 9> res = {};
+  for (int j = 0; j < 9; j++) {
+    for (int i = 0; i < 10; i++) {
       int16_t coef = center_lift<int64_t, Q>(int64_t(W_10S[i]) * W_9S[j]);
       int16_t bar = gen_bar<int16_t, Q>(coef);
       // note: `a << b` for signed and negative `a` is undefined until c++20
-      res[i][j] = uint16_t(bar) << 16;
-      res[i][j] |= uint16_t(coef);
+      res[j][i] = uint16_t(bar) << 16;
+      res[j][i] |= uint16_t(coef);
     }
   }
   return res;
@@ -83,6 +83,12 @@ inline void reduce_comb(int16x8_t &vd, int32x4_t comb_vec) {
   vd = vmlsq_lane_s16(vd, esti, low, 2);
 }
 
+inline void crude_reduce_comb(int16x8_t &vd, int32x4_t comb_vec) {
+  int16x4_t low = vget_low_s16(vreinterpretq_s16_s32(comb_vec));
+  int16x8_t esti = vshrq_n_s16(vd, 13);
+  vd = vmlsq_lane_s16(vd, esti, low, 2);
+}
+
 inline int16x8_t twist_comb(int16x8_t v, int32x4_t comb_vec) {
   int16x4_t low = vget_low_s16(vreinterpretq_s16_s32(comb_vec));
   int16x8_t esti = vqrdmulhq_lane_s16(v, low, 1);
@@ -93,9 +99,9 @@ inline int16x8_t twist_comb(int16x8_t v, int32x4_t comb_vec) {
 
 void base_mul(int16_t in1_ntt[9][2][10][8], int16_t in2_ntt[9][2][10][8], int16_t out_ntt[9][2][10][8]) {
   int32x4_t coefs = COEF;
-  for (int i = 0; i < 10; i++) {
-    for (int j = 0; j < 9; j++) {
-      int32_t comb = TWIDDLES[i][j];
+  for (int j = 0; j < 9; j++) {
+    for (int i = 0; i < 10; i++) {
+      int32_t comb = TWIDDLES[j][i];
       coefs = vsetq_lane_s32(comb, coefs, 0);
 
       // std::cerr << "i = " << i << ", j = " << j << '\n';
@@ -109,13 +115,15 @@ void base_mul(int16_t in1_ntt[9][2][10][8], int16_t in2_ntt[9][2][10][8], int16_
       int16x8_t a_bk = vld1q_s16(&in1_ntt[j][1][i][0]);
 
       int16x8_t a_fb = a_fr;
-      reduce_comb(a_fb, coefs);
+      // reduce_comb(a_fb, coefs);
+      crude_reduce_comb(a_fb, coefs);
       a_fb = vaddq_s16(a_fb, a_bk);
 
       int16x8_t b_fr = vld1q_s16(&in2_ntt[j][0][i][0]);
       int16x8_t b_bk = vld1q_s16(&in2_ntt[j][1][i][0]);
 
-      reduce_comb(b_fr, coefs);
+      // reduce_comb(b_fr, coefs);
+      crude_reduce_comb(b_fr, coefs);
 
       int16x8_t c12 = b_fr;
       int16x8_t c11 = twist_comb(b_bk, coefs);
